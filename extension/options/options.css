@@ -260,6 +260,31 @@ select {
   color: var(--apple-success);
 }
 
+/* Auto-connect secret row */
+.secret-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.secret-row input {
+  flex: 1;
+  min-width: 160px;
+  margin-top: 0 !important;
+}
+
+.auto-connect-status {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  color: var(--apple-success);
+}
+
+.auto-connect-status.error {
+  color: #ff3b30;
+}
+
 /* Email & Desktop sections — first element is h2, then p, then checkbox */
 .email-alert .row,
 .desktop-relay .row {

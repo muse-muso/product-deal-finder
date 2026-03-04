@@ -58,7 +58,9 @@ public abstract class BaseProductPageAdapter : IProductPageAdapter
             : text.Length <= ScrapedTextLogLimit
                 ? text
                 : text.Substring(0, ScrapedTextLogLimit) + "... [truncated]";
-        _logger.LogInformation(
+        // Debug level only: the raw snippet can contain session tokens, personalised pricing,
+        // or PII from a logged-in retailer session and should not appear in default-level logs.
+        _logger.LogDebug(
             "Scrape TargetId={TargetId} Retailer={Retailer} Url={Url} Selector={Selector} TextLength={TextLength}. Scraped text snippet: {Snippet}",
             target.Id, RetailerCode, target.ProductPageUrl, selectorUsed, textLen, snippet);
 

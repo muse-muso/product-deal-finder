@@ -6,6 +6,7 @@ using ProductDealFinder.Core.Data;
 using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Models;
 using ProductDealFinder.Core.Scheduling;
+using ProductDealFinder.Core.Scraping;
 using ProductDealFinder.Infrastructure.Relay;
 
 namespace ProductDealFinder;
@@ -21,6 +22,9 @@ public partial class MainWindow : Window
     private readonly IExtensionRelayService _extensionRelay;
 
     private const string SmtpCredentialKey = "ProductDealFinder_SMTP";
+
+    /// <summary>Minimum scan interval to avoid hammering retailer sites.</summary>
+    private const int MinScanIntervalMinutes = 5;
 
     public MainWindow(
         IDbContextFactory<AppDbContext> dbContextFactory,
@@ -65,8 +69,12 @@ public partial class MainWindow : Window
                 ScanIntervalMinutesTextBox.Text = ((int)settings.ScanInterval.TotalMinutes).ToString();
                 ExtensionRelayEnabledCheckBox.IsChecked = settings.ExtensionRelayEnabled ?? false;
                 ExtensionRelayPortTextBox.Text = (settings.ExtensionRelayPort > 0 ? settings.ExtensionRelayPort.ToString() : null) ?? "8765";
-                ExtensionRelaySecretTextBox.Text = settings.ExtensionRelaySecret ?? "";
             }
+
+            // Show relay secret from Credential Manager (masked — displayed as dots by PasswordBox).
+            var relaySecret = GetRelaySecretFromCredManager();
+            if (!string.IsNullOrEmpty(relaySecret))
+                ExtensionRelaySecretBox.Password = relaySecret;
 
             StatusTextBox.Text = "Loaded settings and retailers.";
         }
@@ -86,9 +94,9 @@ public partial class MainWindow : Window
                 return;
             }
 
-            if (!int.TryParse(ScanIntervalMinutesTextBox.Text, out int minutes) || minutes <= 0)
+            if (!int.TryParse(ScanIntervalMinutesTextBox.Text, out int minutes) || minutes < MinScanIntervalMinutes)
             {
-                StatusTextBox.Text = "Scan interval must be a positive number of minutes.";
+                StatusTextBox.Text = $"Scan interval must be at least {MinScanIntervalMinutes} minutes.";
                 return;
             }
 
@@ -105,7 +113,21 @@ public partial class MainWindow : Window
                 return;
             }
 
-            // Save password to Windows Credential Manager when provided; leave blank to keep existing.
+            // Basic email format validation.
+            if (!IsValidEmail(fromEmail))
+            {
+                StatusTextBox.Text = "From Email does not look like a valid email address.";
+                return;
+            }
+
+            var notificationEmail = DefaultNotificationEmailTextBox.Text.Trim();
+            if (!string.IsNullOrEmpty(notificationEmail) && !IsValidEmail(notificationEmail))
+            {
+                StatusTextBox.Text = "Default Email Address does not look like a valid email address.";
+                return;
+            }
+
+            // Save SMTP password to Windows Credential Manager when provided; keep existing if blank.
             bool haveExistingCredential = false;
             using (var existing = new Credential { Target = SmtpCredentialKey, Type = CredentialType.Generic })
             {
@@ -119,7 +141,6 @@ public partial class MainWindow : Window
                     StatusTextBox.Text = "Please enter an SMTP password (leave blank only if you already saved one).";
                     return;
                 }
-                // Keep existing credential; only update other settings below.
             }
             else
             {
@@ -158,9 +179,9 @@ public partial class MainWindow : Window
             settings.DefaultMailboxName = string.IsNullOrWhiteSpace(DefaultMailboxNameTextBox.Text)
                 ? null
                 : DefaultMailboxNameTextBox.Text.Trim();
-            settings.DefaultNotificationEmail = string.IsNullOrWhiteSpace(DefaultNotificationEmailTextBox.Text)
+            settings.DefaultNotificationEmail = string.IsNullOrWhiteSpace(notificationEmail)
                 ? null
-                : DefaultNotificationEmailTextBox.Text.Trim();
+                : notificationEmail;
             settings.SmtpUserName = smtpUser;
             settings.SmtpPasswordCredentialKey = SmtpCredentialKey;
             settings.ScanInterval = TimeSpan.FromMinutes(minutes);
@@ -169,10 +190,22 @@ public partial class MainWindow : Window
             if (int.TryParse(ExtensionRelayPortTextBox.Text.Trim(), out int relayPort) && relayPort > 0 && relayPort < 65536)
                 settings.ExtensionRelayPort = relayPort;
             else
-                settings.ExtensionRelayPort = 8765; // non-null for new/updated row
-            settings.ExtensionRelaySecret = string.IsNullOrWhiteSpace(ExtensionRelaySecretTextBox.Text) ? null : ExtensionRelaySecretTextBox.Text.Trim();
+                settings.ExtensionRelayPort = 8765;
+
+            // Relay secret is managed in Windows Credential Manager by ExtensionRelayService.
+            // Auto-generate it here so it is ready as soon as the relay is saved & started.
+            if (settings.ExtensionRelayEnabled == true)
+                EnsureRelaySecretInCredManager(settings);
+
+            // Clear the legacy plain-text DB column now that the secret lives in Credential Manager.
+            settings.ExtensionRelaySecret = null;
 
             await db.SaveChangesAsync();
+
+            // Refresh the masked display.
+            var newRelaySecret = GetRelaySecretFromCredManager();
+            if (!string.IsNullOrEmpty(newRelaySecret))
+                ExtensionRelaySecretBox.Password = newRelaySecret;
 
             try { await _extensionRelay.RestartAsync(); } catch (Exception ex) { StatusTextBox.Text = "Settings saved. Relay restart failed: " + ex.Message; return; }
 
@@ -195,6 +228,14 @@ public partial class MainWindow : Window
             if (string.IsNullOrWhiteSpace(productName) || string.IsNullOrWhiteSpace(url))
             {
                 StatusTextBox.Text = "Product Name and Product Page URL are required.";
+                return;
+            }
+
+            // Validate the URL before saving to prevent SSRF via crafted DB entries.
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var parsedUri) ||
+                !parsedUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            {
+                StatusTextBox.Text = "Product Page URL must start with https://";
                 return;
             }
 
@@ -247,7 +288,6 @@ public partial class MainWindow : Window
             db.PriceThresholds.Add(threshold);
             await db.SaveChangesAsync();
 
-            // Send "product added" notification email (best-effort; don't fail the save)
             target.Product = product;
             target.RetailerSite = retailer;
             var productAddedContext = new ProductAddedContext(product, target, threshold);
@@ -301,4 +341,49 @@ public partial class MainWindow : Window
         };
         window.Show();
     }
+
+    // -------------------------------------------------------------------------
+    // Relay secret helpers
+    // -------------------------------------------------------------------------
+
+    private static string? GetRelaySecretFromCredManager()
+    {
+        using var cred = new Credential { Target = ExtensionRelayService.RelaySecretCredentialKey, Type = CredentialType.Generic };
+        return cred.Load() ? cred.Password : null;
+    }
+
+    /// <summary>
+    /// Ensures a relay secret exists in Credential Manager. Migrates any existing plain-text
+    /// secret from the DB settings row (preserves pairing for existing installs).
+    /// </summary>
+    private static void EnsureRelaySecretInCredManager(UserSettings? settings)
+    {
+        using var existing = new Credential { Target = ExtensionRelayService.RelaySecretCredentialKey, Type = CredentialType.Generic };
+        if (existing.Load()) return;
+
+        var secret = !string.IsNullOrWhiteSpace(settings?.ExtensionRelaySecret)
+            ? settings.ExtensionRelaySecret
+            : Guid.NewGuid().ToString("N");
+
+        using var newCred = new Credential
+        {
+            Target = ExtensionRelayService.RelaySecretCredentialKey,
+            Username = "relay",
+            Password = secret,
+            PersistanceType = PersistanceType.LocalComputer,
+            Type = CredentialType.Generic
+        };
+        newCred.Save();
+    }
+
+    // -------------------------------------------------------------------------
+    // Input validation helpers
+    // -------------------------------------------------------------------------
+
+    private static bool IsValidEmail(string email)
+        => !string.IsNullOrWhiteSpace(email) &&
+           System.Text.RegularExpressions.Regex.IsMatch(
+               email,
+               @"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+               System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 }

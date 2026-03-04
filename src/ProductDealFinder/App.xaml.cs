@@ -33,14 +33,15 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
-            string message = args.Exception?.ToString() ?? "Unknown error";
-            System.Diagnostics.Debug.WriteLine(message);
+            // Log the full details for troubleshooting but don't expose internal paths
+            // or stack frames to the screen (information disclosure).
+            System.Diagnostics.Debug.WriteLine(args.Exception?.ToString() ?? "Unknown error");
             MessageBox.Show(
-                "An error occurred:\n\n" + (args.Exception?.Message ?? "Unknown") + "\n\nSee Details for full message.",
+                "An unexpected error occurred. Please restart the application.\n\n" +
+                "If this keeps happening, check the application log for details.",
                 "Product Deal Finder - Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
-            // Optionally rethrow to exit: args.Handled = false;
         };
 
         try
@@ -105,8 +106,12 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            // Log full details for diagnosis; show only a brief message to avoid leaking
+            // internal paths and class names in the UI.
+            System.Diagnostics.Debug.WriteLine("Startup failure: " + ex);
             MessageBox.Show(
-                "Failed to start the application:\n\n" + ex.Message + "\n\n" + ex.StackTrace,
+                "Failed to start the application.\n\n" + ex.Message +
+                "\n\nCheck the Windows Event Log or attach a debugger for full details.",
                 "Product Deal Finder - Startup Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

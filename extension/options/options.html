@@ -48,7 +48,7 @@
 
     <section class="desktop-relay">
       <h2>Automatic email via desktop app</h2>
-      <p>If you run the <strong>Product Deal Finder desktop app</strong> (Windows), enable the relay there and below. The extension will POST alerts to the app, which sends email via your SMTP — fully automatic, $0.</p>
+      <p>If you run the <strong>Product Deal Finder desktop app</strong> (Windows), enable the relay there, then click <strong>Auto-connect</strong> below — the extension pairs itself automatically. No manual secret entry required.</p>
       <label class="checkbox">
         <input type="checkbox" id="emailViaDesktopApp">
         Send price alerts to desktop app (automatic email)
@@ -58,8 +58,12 @@
         <input type="text" id="desktopAppUrl" placeholder="http://127.0.0.1:8765">
       </div>
       <div class="row">
-        <label for="desktopAppSecret">Secret token (must match desktop app)</label>
-        <input type="text" id="desktopAppSecret" placeholder="optional">
+        <label for="desktopAppSecret">Secret token</label>
+        <div class="secret-row">
+          <input type="password" id="desktopAppSecret" placeholder="Click Auto-connect to pair automatically">
+          <button type="button" id="autoConnectBtn" class="btn secondary">Auto-connect</button>
+        </div>
+        <p id="autoConnectStatus" class="auto-connect-status"></p>
       </div>
     </section>
 

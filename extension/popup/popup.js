@@ -1,5 +1,5 @@
 (function () {
-  const DEBUG = true;
+  const DEBUG = false;
   const log = (...args) => { if (DEBUG) console.log('[PDF popup]', ...args); };
 
   const trackedList = document.getElementById('trackedList');
@@ -117,7 +117,10 @@
       openBtn.textContent = 'Open';
       openBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        browser.tabs.create({ url: item.url });
+        // Only open https URLs on known retailer domains (matches background.js ALLOWED_HOSTS).
+        if (/^https:\/\//.test(item.url)) {
+          browser.tabs.create({ url: item.url });
+        }
       });
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';

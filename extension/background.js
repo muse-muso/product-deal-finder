@@ -4,12 +4,27 @@
  * Debug: In about:debugging → This Firefox → Inspect (background script) → Console; logs prefixed [PDF bg].
  */
 
-const DEBUG = true;
+const DEBUG = false;
 const log = (...args) => { if (DEBUG) console.log('[PDF bg]', ...args); };
 
 const STORAGE_KEY = 'productDealFinder_tracked';
 const STORAGE_OPTIONS = 'productDealFinder_options';
+const STORAGE_SECRET = 'productDealFinder_relaySecret'; // stored local-only, never synced
 const MAX_PRICE_HISTORY = 10;
+
+// Supported retailer hostnames — URLs must match to be tracked or imported.
+const ALLOWED_HOSTS = new Set([
+  'www.jbhifi.com.au',
+  'jbhifi.com.au',
+  'www.amazon.com.au',
+  'amazon.com.au',
+  'www.thegoodguys.com.au',
+  'thegoodguys.com.au',
+  'www.officeworks.com.au',
+  'officeworks.com.au',
+  'www.harveynorman.com.au',
+  'harveynorman.com.au'
+]);
 
 const DEFAULT_OPTIONS = {
   notificationsEnabled: true,
@@ -18,8 +33,30 @@ const DEFAULT_OPTIONS = {
   emailAlertTo: '',
   emailViaDesktopApp: false,
   desktopAppUrl: 'http://127.0.0.1:8765',
-  desktopAppSecret: ''
+  desktopAppSecret: '' // placeholder — actual value always loaded from local storage
 };
+
+// Returns true only for https URLs on supported retailer domains.
+function isValidProductUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && ALLOWED_HOSTS.has(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+// Returns true only for http://127.0.0.1:<port> or http://localhost:<port>.
+function isValidRelayUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    if (u.protocol !== 'http:') return false;
+    const host = u.hostname.toLowerCase();
+    return host === '127.0.0.1' || host === 'localhost';
+  } catch {
+    return false;
+  }
+}
 
 const notificationIdToUrl = new Map();
 
@@ -55,21 +92,32 @@ async function setTracked(items) {
   await browser.storage.local.set({ [STORAGE_KEY]: normalized });
 }
 
+// Options are stored in sync storage EXCEPT desktopAppSecret, which is local-only.
 async function getOptions() {
+  let opts = { ...DEFAULT_OPTIONS };
   try {
     const o = await browser.storage.sync.get(STORAGE_OPTIONS);
-    if (o[STORAGE_OPTIONS]) return { ...DEFAULT_OPTIONS, ...o[STORAGE_OPTIONS] };
-  } catch (_) {}
-  const o = await browser.storage.local.get(STORAGE_OPTIONS);
-  return { ...DEFAULT_OPTIONS, ...o[STORAGE_OPTIONS] };
+    if (o[STORAGE_OPTIONS]) opts = { ...opts, ...o[STORAGE_OPTIONS] };
+  } catch (_) {
+    const o = await browser.storage.local.get(STORAGE_OPTIONS);
+    if (o[STORAGE_OPTIONS]) opts = { ...opts, ...o[STORAGE_OPTIONS] };
+  }
+  // Secret is always loaded from local storage only (never synced to cloud).
+  const localSecretStore = await browser.storage.local.get(STORAGE_SECRET);
+  opts.desktopAppSecret = localSecretStore[STORAGE_SECRET] || '';
+  return opts;
 }
 
 async function setOptions(opts) {
+  const { desktopAppSecret, ...syncableOpts } = opts;
+  // Persist secret locally only.
+  await browser.storage.local.set({ [STORAGE_SECRET]: desktopAppSecret || '' });
+  // Persist all other options to sync.
   try {
-    await browser.storage.sync.set({ [STORAGE_OPTIONS]: opts });
+    await browser.storage.sync.set({ [STORAGE_OPTIONS]: syncableOpts });
     return;
   } catch (_) {}
-  await browser.storage.local.set({ [STORAGE_OPTIONS]: opts });
+  await browser.storage.local.set({ [STORAGE_OPTIONS]: syncableOpts });
 }
 
 function updateBadge(count) {
@@ -77,7 +125,7 @@ function updateBadge(count) {
     browser.action.setBadgeText({ text: '' });
   } else {
     browser.action.setBadgeText({ text: String(count) });
-    browser.action.setBadgeBackgroundColor({ color: '#2563eb' });
+    browser.action.setBadgeBackgroundColor({ color: '#0071e3' });
   }
 }
 
@@ -131,7 +179,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 
 browser.notifications.onClicked.addListener(notificationId => {
   const url = notificationIdToUrl.get(notificationId);
-  if (url) browser.tabs.create({ url });
+  if (url && isValidProductUrl(url)) browser.tabs.create({ url });
 });
 
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -172,11 +220,18 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     importTracked(message.items, message.replace).then(sendResponse).catch(() => sendResponse({ ok: false }));
     return true;
   }
+  if (message.type === 'AUTO_PAIR') {
+    autoPair(message.desktopAppUrl).then(sendResponse).catch(() => sendResponse({ ok: false, error: 'Unexpected error' }));
+    return true;
+  }
   sendResponse({ ok: false });
   return false;
 });
 
 async function addTracked({ url, threshold, currency, productName, retailerName }) {
+  if (!isValidProductUrl(url)) {
+    return { ok: false, reason: 'unsupported_url' };
+  }
   const items = await getTracked();
   if (items.some(i => i.url === url)) return { ok: false, reason: 'already_tracked' };
   const entry = {
@@ -212,7 +267,8 @@ async function importTracked(importedItems, replace) {
   const seen = new Set(items.map(i => i.url));
   for (const it of importedItems) {
     const url = it.url || it.link;
-    if (!url || seen.has(url)) continue;
+    // Reject URLs that are not https on a supported retailer.
+    if (!url || seen.has(url) || !isValidProductUrl(url)) continue;
     seen.add(url);
     items.push({
       id: generateId(),
@@ -238,6 +294,21 @@ async function removeTracked(id) {
   await setTracked(items);
   await refreshBadge();
   return { ok: true };
+}
+
+// Auto-pair: fetch the shared secret from the desktop app's /pair endpoint.
+async function autoPair(desktopAppUrl) {
+  const base = (desktopAppUrl || 'http://127.0.0.1:8765').trim().replace(/\/+$/, '');
+  if (!isValidRelayUrl(base)) {
+    return { ok: false, error: 'Desktop app URL must be http://127.0.0.1:<port> or http://localhost:<port>' };
+  }
+  const res = await fetch(base + '/pair', { method: 'GET' });
+  if (!res.ok) return { ok: false, error: 'Desktop app returned HTTP ' + res.status };
+  const data = await res.json();
+  if (!data || !data.ok || !data.secret) return { ok: false, error: 'Invalid response from desktop app' };
+  // Persist the secret locally so it is never synced.
+  await browser.storage.local.set({ [STORAGE_SECRET]: data.secret });
+  return { ok: true, secret: data.secret };
 }
 
 async function handlePageData(payload) {
@@ -271,14 +342,16 @@ async function handlePageData(payload) {
     } catch (_) {}
   }
 
-  // Free email option: open a draft email (mailto) so user can send themselves the alert. $0, no server.
+  // Free email option: open a mailto draft so the user can send the alert themselves.
   if (atOrBelow && opts.emailAlertEnabled && opts.emailAlertTo && opts.emailAlertTo.trim()) {
     try {
       const to = opts.emailAlertTo.trim();
-      const subject = 'Price alert: ' + (entry.productName || 'Product').replace(/[\r\n]/g, ' ');
+      // Strip CRLF and null chars from all fields used in the mailto URI.
+      const cleanStr = s => (s || '').replace(/[\r\n\0]/g, ' ');
+      const subject = cleanStr('Price alert: ' + (entry.productName || 'Product'));
       const body = [
-        entry.productName || 'Product',
-        'Retailer: ' + (entry.retailerName || ''),
+        cleanStr(entry.productName || 'Product'),
+        'Retailer: ' + cleanStr(entry.retailerName || ''),
         'Current price: ' + opts.currency + ' ' + price.toFixed(2),
         'Your target: ' + opts.currency + ' ' + entry.threshold,
         'Link: ' + entry.url
@@ -290,33 +363,38 @@ async function handlePageData(payload) {
     } catch (_) {}
   }
 
-  // Automatic email via desktop app: POST to local relay; desktop app sends email via your SMTP. $0.
+  // Automatic email via desktop app relay.
   if (atOrBelow && opts.emailViaDesktopApp && opts.desktopAppUrl && opts.desktopAppUrl.trim()) {
     try {
       const base = opts.desktopAppUrl.trim().replace(/\/+$/, '');
-      const url = base + '/alert';
-      const payload = {
-        productName: entry.productName || 'Product',
-        retailerName: entry.retailerName || '',
-        url: entry.url,
-        price: price,
-        threshold: entry.threshold,
-        currency: opts.currency || 'AUD'
-      };
-      const headers = { 'Content-Type': 'application/json' };
-      if (opts.desktopAppSecret && opts.desktopAppSecret.trim()) {
-        headers['X-Extension-Secret'] = opts.desktopAppSecret.trim();
-      }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        console.warn('[PDF] Desktop app relay returned', res.status);
+      // Guard: only allow loopback URLs to prevent SSRF.
+      if (!isValidRelayUrl(base)) {
+        log('Relay URL rejected (not loopback):', base);
+      } else {
+        const alertUrl = base + '/alert';
+        const alertPayload = {
+          productName: entry.productName || 'Product',
+          retailerName: entry.retailerName || '',
+          url: entry.url,
+          price: price,
+          threshold: entry.threshold,
+          currency: opts.currency || 'AUD'
+        };
+        const headers = { 'Content-Type': 'application/json' };
+        if (opts.desktopAppSecret && opts.desktopAppSecret.trim()) {
+          headers['X-Extension-Secret'] = opts.desktopAppSecret.trim();
+        }
+        const res = await fetch(alertUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(alertPayload)
+        });
+        if (!res.ok) {
+          log('Desktop app relay returned', res.status);
+        }
       }
     } catch (e) {
-      console.warn('[PDF] Desktop app relay failed', e);
+      log('Desktop app relay failed', e);
     }
   }
 

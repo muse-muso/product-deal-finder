@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProductDealFinder.Core.Data;
@@ -14,6 +15,11 @@ public class ScanService : IScanService
     private readonly IScraperEngine _scraperEngine;
     private readonly IEmailNotificationService _emailNotificationService;
     private readonly ILogger<ScanService> _logger;
+
+    // Tracks the last time an email alert was sent for each threshold (keyed by PriceThreshold.Id).
+    // Static so the cooldown persists across scoped ScanService instances within the same process.
+    private static readonly ConcurrentDictionary<int, DateTime> LastAlertSentAt = new();
+    private static readonly TimeSpan AlertCooldown = TimeSpan.FromHours(24);
 
     public ScanService(
         IDbContextFactory<AppDbContext> dbContextFactory,
@@ -67,16 +73,26 @@ public class ScanService : IScanService
 
                 foreach (var threshold in target.Thresholds.Where(th => th.IsActive))
                 {
-                    if (ShouldTrigger(threshold, scrape.Price.Value))
-                    {
-                        var context = new PriceAlertContext(
-                            target.Product,
-                            target,
-                            threshold,
-                            scrapeResult);
+                    if (!ShouldTrigger(threshold, scrape.Price.Value)) continue;
 
-                        await _emailNotificationService.SendPriceAlertAsync(context, cancellationToken);
+                    var now = DateTime.UtcNow;
+                    if (LastAlertSentAt.TryGetValue(threshold.Id, out var lastSent) &&
+                        (now - lastSent) < AlertCooldown)
+                    {
+                        _logger.LogDebug(
+                            "Skipping alert for threshold {ThresholdId}: cooldown active (last sent {LastSent:u}, next eligible {NextEligible:u})",
+                            threshold.Id, lastSent, lastSent + AlertCooldown);
+                        continue;
                     }
+
+                    var context = new PriceAlertContext(
+                        target.Product,
+                        target,
+                        threshold,
+                        scrapeResult);
+
+                    await _emailNotificationService.SendPriceAlertAsync(context, cancellationToken);
+                    LastAlertSentAt[threshold.Id] = now;
                 }
             }
             catch (Exception ex)

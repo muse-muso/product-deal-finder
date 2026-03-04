@@ -27,6 +27,13 @@ public class EmailNotificationService : IEmailNotificationService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Strips characters that could be used for MIME header injection (\r, \n, \0).
+    /// Call on any user-supplied or scraped string before using it in an email subject or address field.
+    /// </summary>
+    private static string SanitizeHeaderValue(string? value)
+        => (value ?? string.Empty).Replace("\r", " ").Replace("\n", " ").Replace("\0", string.Empty);
+
     public async Task SendPriceAlertAsync(PriceAlertContext context, CancellationToken cancellationToken = default)
     {
         await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -40,11 +47,9 @@ public class EmailNotificationService : IEmailNotificationService
             throw new InvalidOperationException("User email settings are not configured.");
         }
 
-        // Placeholder: retrieve SMTP password from Windows Credential Manager.
         string password = GetSmtpPasswordOrThrow(settings);
 
-        // Placeholder: construct a very simple plain-text message.
-        string subject = $"Price alert: {context.Product.Name}";
+        string subject = $"Price alert: {SanitizeHeaderValue(context.Product.Name)}";
         var bodyBuilder = new StringBuilder();
         bodyBuilder.AppendLine($"Product: {context.Product.Name}");
         bodyBuilder.AppendLine($"Model: {context.Product.ModelNumber}");
@@ -71,7 +76,10 @@ public class EmailNotificationService : IEmailNotificationService
         try
         {
             await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort,
-                settings.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, cancellationToken);
+                // Always require TLS; SecureSocketOptions.StartTls mandates TLS negotiation.
+                // Using Auto would silently allow a plaintext fallback if the server doesn't
+                // offer STARTTLS, which could expose credentials.
+                SecureSocketOptions.StartTls, cancellationToken);
 
             await client.AuthenticateAsync(settings.SmtpUserName, password, cancellationToken);
 
@@ -108,7 +116,7 @@ public class EmailNotificationService : IEmailNotificationService
             return;
         }
 
-        string subject = $"Product added: {context.Product.Name}";
+        string subject = $"Product added: {SanitizeHeaderValue(context.Product.Name)}";
         var bodyBuilder = new StringBuilder();
         bodyBuilder.AppendLine("A new product has been added to your scan list.");
         bodyBuilder.AppendLine();
@@ -137,7 +145,7 @@ public class EmailNotificationService : IEmailNotificationService
         try
         {
             await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort,
-                settings.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, cancellationToken);
+                SecureSocketOptions.StartTls, cancellationToken);
 
             await client.AuthenticateAsync(settings.SmtpUserName, password, cancellationToken);
 
@@ -172,7 +180,7 @@ public class EmailNotificationService : IEmailNotificationService
         string password = GetSmtpPasswordOrThrow(settings);
         string toAddress = string.IsNullOrWhiteSpace(settings.DefaultNotificationEmail) ? settings.FromEmail : settings.DefaultNotificationEmail.Trim();
 
-        string subject = "Price alert: " + payload.ProductName;
+        string subject = "Price alert: " + SanitizeHeaderValue(payload.ProductName);
         var body = new StringBuilder();
         body.AppendLine("Product: " + payload.ProductName);
         body.AppendLine("Retailer: " + payload.RetailerName);
@@ -192,7 +200,7 @@ public class EmailNotificationService : IEmailNotificationService
         try
         {
             await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort,
-                settings.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, cancellationToken);
+                SecureSocketOptions.StartTls, cancellationToken);
             await client.AuthenticateAsync(settings.SmtpUserName, password, cancellationToken);
             await client.SendAsync(message, cancellationToken);
             _logger.LogInformation("Extension price alert sent for {ProductName}", payload.ProductName);

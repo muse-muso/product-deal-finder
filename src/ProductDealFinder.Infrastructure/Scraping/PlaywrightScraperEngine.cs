@@ -13,6 +13,24 @@ public class PlaywrightScraperEngine : IScraperEngine
     private readonly IEnumerable<IProductPageAdapter> _adapters;
     private readonly ILogger<PlaywrightScraperEngine> _logger;
 
+    /// <summary>
+    /// Allowed HTTPS hostnames for product pages. Prevents SSRF / local-file access via
+    /// crafted URLs in the database (e.g. file:///, http://internal-host/).
+    /// </summary>
+    private static readonly HashSet<string> AllowedHosts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "www.jbhifi.com.au",
+        "jbhifi.com.au",
+        "www.amazon.com.au",
+        "amazon.com.au",
+        "www.thegoodguys.com.au",
+        "thegoodguys.com.au",
+        "www.officeworks.com.au",
+        "officeworks.com.au",
+        "www.harveynorman.com.au",
+        "harveynorman.com.au"
+    };
+
     public PlaywrightScraperEngine(
         IEnumerable<IProductPageAdapter> adapters,
         ILogger<PlaywrightScraperEngine> logger)
@@ -27,6 +45,9 @@ public class PlaywrightScraperEngine : IScraperEngine
         {
             throw new InvalidOperationException("ProductTarget.RetailerSite must be loaded before scraping.");
         }
+
+        // Validate the URL before launching the browser to prevent SSRF and local file access.
+        ValidateProductUrl(target.ProductPageUrl);
 
         string retailerCode = target.RetailerSite.Code;
 
@@ -43,8 +64,6 @@ public class PlaywrightScraperEngine : IScraperEngine
 
         using var playwrightCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         playwrightCts.CancelAfter(TimeSpan.FromSeconds(60));
-
-        using var _ = playwrightCts; // ensure disposal
 
         using var playwright = await Microsoft.Playwright.Playwright.CreateAsync();
 
@@ -64,5 +83,27 @@ public class PlaywrightScraperEngine : IScraperEngine
 
         return await adapter.ScrapeAsync(page, target, playwrightCts.Token);
     }
-}
 
+    /// <summary>
+    /// Throws if the URL is not an https:// address on a supported retailer domain.
+    /// </summary>
+    private static void ValidateProductUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException($"Product URL is not a valid absolute URI: '{url}'.");
+        }
+
+        if (!uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Product URL scheme must be 'https', got '{uri.Scheme}'. Only HTTPS URLs on supported retailer sites are allowed.");
+        }
+
+        if (!AllowedHosts.Contains(uri.Host))
+        {
+            throw new InvalidOperationException(
+                $"Product URL host '{uri.Host}' is not a supported retailer. Allowed hosts: {string.Join(", ", AllowedHosts)}.");
+        }
+    }
+}

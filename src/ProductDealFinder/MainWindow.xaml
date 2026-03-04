@@ -52,8 +52,10 @@
                     <CheckBox x:Name="ExtensionRelayEnabledCheckBox" Content="Enable extension relay" Margin="0,0,0,8" />
                     <TextBlock Text="Relay port (default 8765)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
                     <TextBox x:Name="ExtensionRelayPortTextBox" Margin="0,4,0,12" Text="8765" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
-                    <TextBlock Text="Secret token (optional; set same in extension)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
-                    <TextBox x:Name="ExtensionRelaySecretTextBox" Margin="0,4,0,16" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                    <TextBlock Text="Secret token (auto-generated; stored in Windows Credential Manager)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <PasswordBox x:Name="ExtensionRelaySecretBox" Margin="0,4,0,4" IsEnabled="False"
+                                 Style="{StaticResource MaterialDesignFilledPasswordBox}" />
+                    <TextBlock Text="Use 'Auto-connect' in the Firefox extension options to pair automatically — no manual entry needed." FontSize="11" Margin="0,0,0,16" Opacity="0.6" TextWrapping="Wrap" />
 
                     <Button Width="220" HorizontalAlignment="Left"
                             Style="{StaticResource MaterialDesignRaisedButton}"
