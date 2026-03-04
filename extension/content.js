@@ -5,7 +5,7 @@
  */
 
 (function () {
-  const DEBUG = false; // set to true and reload to see [PDF] logs in Console (F12)
+  const DEBUG = true; // set to false to reduce console noise; logs prefixed [PDF]
   const log = (...args) => { if (DEBUG) console.log('[PDF]', ...args); };
 
   const RETAILER_CONFIG = {

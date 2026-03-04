@@ -27,7 +27,21 @@ Browser extension that tracks product prices on Australian retailers and notifie
 3. Select the `manifest.json` file inside the `extension` folder.
 4. The extension stays loaded until you restart Firefox. Reload the add-on after changing code.
 
-## Debugging (price not showing)
+## Debugging
+
+### Popup (tracking / settings not working)
+
+1. **Open the extension popup** (click the extension icon).
+2. **Right-click inside the popup** → **Inspect** (or **Inspect Element**). DevTools opens for the popup.
+3. In the **Console** tab, filter by `PDF popup`. You should see logs when the popup opened (e.g. `Settings button found`, `Loading tracked list`, `GET_TRACKED response N items`).
+4. Click **Track this page** or the **gear (settings)** and watch for new log lines. Any script error will appear in red and can break the popup (e.g. settings not opening). Reload the add-on after code changes, then open the popup again to test.
+
+### Background (storage, notifications)
+
+1. In **about:debugging** → **This Firefox**, find **Product Deal Finder** and click **Inspect** next to the **Service Worker** (or **Background page**).
+2. In the Console, filter by `PDF bg` to see message handling (e.g. `message GET_TRACKED`, `message ADD_TRACKED`).
+
+### Price not showing on product page
 
 1. Open the **product page** (e.g. JB Hi-Fi) in a normal tab.
 2. Press **F12** to open Developer Tools → open the **Console** tab.

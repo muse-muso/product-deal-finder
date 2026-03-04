@@ -1,7 +1,11 @@
 /**
  * Background service worker: stores tracked products, compares prices from content script,
  * shows notifications when price is at or below target, updates badge.
+ * Debug: In about:debugging → This Firefox → Inspect (background script) → Console; logs prefixed [PDF bg].
  */
+
+const DEBUG = true;
+const log = (...args) => { if (DEBUG) console.log('[PDF bg]', ...args); };
 
 const STORAGE_KEY = 'productDealFinder_tracked';
 const STORAGE_OPTIONS = 'productDealFinder_options';
@@ -131,6 +135,7 @@ browser.notifications.onClicked.addListener(notificationId => {
 });
 
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  log('message', message.type, message.type === 'ADD_TRACKED' ? message.payload?.url : '');
   if (message.type === 'PAGE_DATA') {
     handlePageData(message.payload).then(sendResponse).catch(() => sendResponse({ ok: false }));
     return true;

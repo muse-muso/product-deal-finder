@@ -7,7 +7,8 @@
 </head>
 <body>
   <div class="options">
-    <h1>Product Deal Finder – Options</h1>
+    <h1>Product Deal Finder</h1>
+    <p class="page-subtitle">Options</p>
 
     <section class="how-it-works">
       <h2>How it works</h2>
@@ -15,6 +16,7 @@
     </section>
 
     <section>
+      <h2>Notifications</h2>
       <label class="checkbox">
         <input type="checkbox" id="notificationsEnabled" checked>
         Show browser notifications when a tracked product reaches your target price
@@ -22,6 +24,7 @@
     </section>
 
     <section>
+      <h2>Display</h2>
       <label for="currency">Default currency (for display)</label>
       <select id="currency">
         <option value="AUD" selected>AUD</option>
@@ -60,8 +63,10 @@
       </div>
     </section>
 
-    <button id="saveBtn" class="btn primary">Save</button>
-    <p id="saveStatus" class="status"></p>
+    <div class="save-area">
+      <button id="saveBtn" class="btn primary">Save</button>
+      <p id="saveStatus" class="status"></p>
+    </div>
 
     <section class="import-export">
       <h2>Import / Export</h2>
