@@ -15,6 +15,16 @@ public class UserSettings
 
     public string? FromDisplayName { get; set; }
 
+    /// <summary>
+    /// Optional label for this mailbox (e.g. "Gmail", "Work") for display.
+    /// </summary>
+    public string? DefaultMailboxName { get; set; }
+
+    /// <summary>
+    /// Email address to send notifications to. If null or empty, alerts are sent to FromEmail.
+    /// </summary>
+    public string? DefaultNotificationEmail { get; set; }
+
     public string SmtpUserName { get; set; } = string.Empty;
 
     /// <summary>

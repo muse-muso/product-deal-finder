@@ -2,6 +2,7 @@ using System.Windows;
 using CredentialManagement;
 using Microsoft.EntityFrameworkCore;
 using ProductDealFinder.Core.Data;
+using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Models;
 
 namespace ProductDealFinder;
@@ -12,12 +13,16 @@ namespace ProductDealFinder;
 public partial class MainWindow : Window
 {
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
+    private readonly IEmailNotificationService _emailNotificationService;
 
     private const string SmtpCredentialKey = "ProductDealFinder_SMTP";
 
-    public MainWindow(IDbContextFactory<AppDbContext> dbContextFactory)
+    public MainWindow(
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        IEmailNotificationService emailNotificationService)
     {
         _dbContextFactory = dbContextFactory;
+        _emailNotificationService = emailNotificationService;
         InitializeComponent();
         Loaded += OnLoaded;
     }
@@ -45,6 +50,8 @@ public partial class MainWindow : Window
                 UseSslCheckBox.IsChecked = settings.UseSsl;
                 FromEmailTextBox.Text = settings.FromEmail;
                 FromDisplayNameTextBox.Text = settings.FromDisplayName;
+                DefaultMailboxNameTextBox.Text = settings.DefaultMailboxName ?? "";
+                DefaultNotificationEmailTextBox.Text = settings.DefaultNotificationEmail ?? "";
                 SmtpUserNameTextBox.Text = settings.SmtpUserName;
                 ScanIntervalMinutesTextBox.Text = ((int)settings.ScanInterval.TotalMinutes).ToString();
             }
@@ -123,6 +130,12 @@ public partial class MainWindow : Window
             settings.FromDisplayName = string.IsNullOrWhiteSpace(FromDisplayNameTextBox.Text)
                 ? null
                 : FromDisplayNameTextBox.Text.Trim();
+            settings.DefaultMailboxName = string.IsNullOrWhiteSpace(DefaultMailboxNameTextBox.Text)
+                ? null
+                : DefaultMailboxNameTextBox.Text.Trim();
+            settings.DefaultNotificationEmail = string.IsNullOrWhiteSpace(DefaultNotificationEmailTextBox.Text)
+                ? null
+                : DefaultNotificationEmailTextBox.Text.Trim();
             settings.SmtpUserName = smtpUser;
             settings.SmtpPasswordCredentialKey = SmtpCredentialKey;
             settings.ScanInterval = TimeSpan.FromMinutes(minutes);
@@ -200,11 +213,37 @@ public partial class MainWindow : Window
             db.PriceThresholds.Add(threshold);
             await db.SaveChangesAsync();
 
-            StatusTextBox.Text = $"Product, target, and threshold saved. Target ID: {target.Id}.";
+            // Send "product added" notification email (best-effort; don't fail the save)
+            target.Product = product;
+            target.RetailerSite = retailer;
+            var productAddedContext = new ProductAddedContext(product, target, threshold);
+            try
+            {
+                await _emailNotificationService.SendProductAddedNotificationAsync(productAddedContext);
+                StatusTextBox.Text = $"Product, target, and threshold saved. Target ID: {target.Id}. Confirmation email sent.";
+            }
+            catch (Exception emailEx)
+            {
+                string hint = "";
+                if (emailEx.Message.Contains("SmtpClientAuthentication is disabled", StringComparison.OrdinalIgnoreCase))
+                    hint = " (Outlook/Microsoft 365 may have SMTP auth disabled — see README Troubleshooting.)";
+                else if (emailEx.Message.Contains("Username and Password not accepted", StringComparison.OrdinalIgnoreCase) || emailEx.Message.Contains("BadCredentials", StringComparison.OrdinalIgnoreCase))
+                    hint = " (For Gmail use an App password, not your normal password — see README Troubleshooting.)";
+                StatusTextBox.Text = $"Product, target, and threshold saved. Target ID: {target.Id}. Email notification failed: {emailEx.Message}{hint}";
+            }
         }
         catch (Exception ex)
         {
             StatusTextBox.Text = $"Error saving product/target: {ex.Message}";
         }
+    }
+
+    private void OnOpenManagementWindowClick(object sender, RoutedEventArgs e)
+    {
+        var window = new ManageDataWindow(_dbContextFactory)
+        {
+            Owner = this
+        };
+        window.Show();
     }
 }

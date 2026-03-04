@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<ProductTarget> ProductTargets => Set<ProductTarget>();
     public DbSet<PriceThreshold> PriceThresholds => Set<PriceThreshold>();
     public DbSet<ScrapeResult> ScrapeResults => Set<ScrapeResult>();
+    public DbSet<ScanError> ScanErrors => Set<ScanError>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -100,6 +101,21 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<ScanError>(entity =>
+        {
+            entity.Property(e => e.Message)
+                .IsRequired()
+                .HasMaxLength(2048);
+
+            entity.Property(e => e.ExceptionType)
+                .HasMaxLength(512);
+
+            entity.HasOne(e => e.ProductTarget)
+                .WithMany()
+                .HasForeignKey(e => e.ProductTargetId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
         modelBuilder.Entity<UserSettings>(entity =>
         {
             entity.Property(s => s.SmtpHost)
@@ -111,6 +127,12 @@ public class AppDbContext : DbContext
                 .HasMaxLength(256);
 
             entity.Property(s => s.FromDisplayName)
+                .HasMaxLength(256);
+
+            entity.Property(s => s.DefaultMailboxName)
+                .HasMaxLength(128);
+
+            entity.Property(s => s.DefaultNotificationEmail)
                 .HasMaxLength(256);
 
             entity.Property(s => s.SmtpUserName)

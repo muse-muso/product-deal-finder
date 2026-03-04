@@ -467,3 +467,5 @@ C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder\obj\Debug
 C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder\obj\Debug\net8.0-windows\ProductDealFinder.pdb
 C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder\obj\Debug\net8.0-windows\ProductDealFinder.genruntimeconfig.cache
 C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder\obj\Debug\net8.0-windows\ref\ProductDealFinder.dll
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder\obj\Debug\net8.0-windows\ManageDataWindow.baml
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder\obj\Debug\net8.0-windows\ManageDataWindow.g.cs

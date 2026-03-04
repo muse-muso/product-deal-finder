@@ -23,7 +23,23 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        _host = Host.CreateDefaultBuilder(e.Args)
+        // Catch unhandled exceptions so the app doesn't exit silently
+        DispatcherUnhandledException += (_, args) =>
+        {
+            args.Handled = true;
+            string message = args.Exception?.ToString() ?? "Unknown error";
+            System.Diagnostics.Debug.WriteLine(message);
+            MessageBox.Show(
+                "An error occurred:\n\n" + (args.Exception?.Message ?? "Unknown") + "\n\nSee Details for full message.",
+                "Product Deal Finder - Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            // Optionally rethrow to exit: args.Handled = false;
+        };
+
+        try
+        {
+            _host = Host.CreateDefaultBuilder(e.Args)
             .ConfigureServices((_, services) =>
             {
                 string dataDirectory = System.IO.Path.Combine(
@@ -58,6 +74,7 @@ public partial class App : Application
 
                 // WPF
                 services.AddSingleton<MainWindow>();
+                services.AddTransient<ManageDataWindow>();
             })
             .Build();
 
@@ -72,6 +89,16 @@ public partial class App : Application
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "Failed to start the application:\n\n" + ex.Message + "\n\n" + ex.StackTrace,
+                "Product Deal Finder - Startup Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown(1);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

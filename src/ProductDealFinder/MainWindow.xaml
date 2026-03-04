@@ -29,6 +29,12 @@
                 <TextBlock Text="From Display Name (optional)" />
                 <TextBox x:Name="FromDisplayNameTextBox" Margin="0,2,0,8" />
 
+                <TextBlock Text="Default Mailbox Name (optional label, e.g. Gmail, Work)" />
+                <TextBox x:Name="DefaultMailboxNameTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="Default Email Address (where to send alerts; leave blank to use From Email)" />
+                <TextBox x:Name="DefaultNotificationEmailTextBox" Margin="0,2,0,8" />
+
                 <TextBlock Text="SMTP Username" />
                 <TextBox x:Name="SmtpUserNameTextBox" Margin="0,2,0,8" />
 
@@ -77,11 +83,16 @@
 
                 <TextBlock Text="Status / Last Action" FontWeight="Bold" />
                 <TextBox x:Name="StatusTextBox"
-                         Margin="0,2,0,0"
+                         Margin="0,2,0,8"
                          IsReadOnly="True"
-                         Height="80"
+                         Height="60"
                          TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto" />
+
+                <Button Content="Open Management Window"
+                        Width="200"
+                        HorizontalAlignment="Left"
+                        Click="OnOpenManagementWindowClick" />
             </StackPanel>
         </GroupBox>
     </Grid>

@@ -9,6 +9,12 @@ public static class AppDbSeeder
     {
         await db.Database.EnsureCreatedAsync(cancellationToken);
 
+        // Ensure ScanErrors table exists (e.g. if DB was created before this entity was added)
+        await EnsureScanErrorsTableExistsAsync(db, cancellationToken);
+
+        // Add new UserSettings columns if missing (existing DBs created before these properties)
+        await EnsureUserSettingsColumnsAsync(db, cancellationToken);
+
         if (!await db.RetailerSites.AnyAsync(cancellationToken))
         {
             db.RetailerSites.AddRange(
@@ -56,6 +62,37 @@ public static class AppDbSeeder
                 });
 
             await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static async Task EnsureScanErrorsTableExistsAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "CREATE TABLE IF NOT EXISTS ScanErrors (Id INTEGER PRIMARY KEY AUTOINCREMENT, ProductTargetId INTEGER, Message TEXT NOT NULL, ExceptionType TEXT, CreatedAtUtc TEXT NOT NULL)",
+                cancellationToken);
+        }
+        catch
+        {
+            // Table may already exist with correct schema; ignore
+        }
+    }
+
+    private static async Task EnsureUserSettingsColumnsAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        foreach (string column in new[] { "DefaultMailboxName", "DefaultNotificationEmail" })
+        {
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    $"ALTER TABLE UserSettings ADD COLUMN {column} TEXT",
+                    cancellationToken);
+            }
+            catch
+            {
+                // Column already exists; ignore
+            }
         }
     }
 }

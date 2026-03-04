@@ -53,11 +53,13 @@ public class EmailNotificationService : IEmailNotificationService
         bodyBuilder.AppendLine($"Current price: {context.ScrapeResult.Price} {context.ScrapeResult.Currency}");
         bodyBuilder.AppendLine($"Product page: {context.ProductTarget.ProductPageUrl}");
 
+        string toAddress = string.IsNullOrWhiteSpace(settings.DefaultNotificationEmail) ? settings.FromEmail : settings.DefaultNotificationEmail.Trim();
+
         using var message = new MimeKit.MimeMessage();
         message.From.Add(new MimeKit.MailboxAddress(
             settings.FromDisplayName ?? settings.FromEmail,
             settings.FromEmail));
-        message.To.Add(new MimeKit.MailboxAddress(settings.FromEmail, settings.FromEmail));
+        message.To.Add(new MimeKit.MailboxAddress(toAddress, toAddress));
         message.Subject = subject;
         message.Body = new MimeKit.TextPart("plain")
         {
@@ -74,6 +76,78 @@ public class EmailNotificationService : IEmailNotificationService
             await client.AuthenticateAsync(settings.SmtpUserName, password, cancellationToken);
 
             await client.SendAsync(message, cancellationToken);
+        }
+        finally
+        {
+            await client.DisconnectAsync(true, cancellationToken);
+        }
+    }
+
+    public async Task SendProductAddedNotificationAsync(ProductAddedContext context, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        UserSettings? settings = await db.UserSettings
+            .OrderByDescending(s => s.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (settings is null)
+        {
+            _logger.LogWarning("Cannot send product-added email: user email settings are not configured.");
+            return;
+        }
+
+        string password;
+        try
+        {
+            password = GetSmtpPasswordOrThrow(settings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Cannot send product-added email: SMTP credential not available.");
+            return;
+        }
+
+        string subject = $"Product added: {context.Product.Name}";
+        var bodyBuilder = new StringBuilder();
+        bodyBuilder.AppendLine("A new product has been added to your scan list.");
+        bodyBuilder.AppendLine();
+        bodyBuilder.AppendLine($"Product: {context.Product.Name}");
+        if (!string.IsNullOrWhiteSpace(context.Product.ModelNumber))
+            bodyBuilder.AppendLine($"Model: {context.Product.ModelNumber}");
+        bodyBuilder.AppendLine($"Retailer: {context.ProductTarget.RetailerSite.Name}");
+        bodyBuilder.AppendLine($"Alert when price: {context.Threshold.Comparison} {context.Threshold.Value} {context.Threshold.Currency}");
+        bodyBuilder.AppendLine($"Product page: {context.ProductTarget.ProductPageUrl}");
+
+        string toAddress = string.IsNullOrWhiteSpace(settings.DefaultNotificationEmail) ? settings.FromEmail : settings.DefaultNotificationEmail.Trim();
+
+        using var message = new MimeKit.MimeMessage();
+        message.From.Add(new MimeKit.MailboxAddress(
+            settings.FromDisplayName ?? settings.FromEmail,
+            settings.FromEmail));
+        message.To.Add(new MimeKit.MailboxAddress(toAddress, toAddress));
+        message.Subject = subject;
+        message.Body = new MimeKit.TextPart("plain")
+        {
+            Text = bodyBuilder.ToString()
+        };
+
+        using var client = new SmtpClient();
+
+        try
+        {
+            await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort,
+                settings.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, cancellationToken);
+
+            await client.AuthenticateAsync(settings.SmtpUserName, password, cancellationToken);
+
+            await client.SendAsync(message, cancellationToken);
+            _logger.LogInformation("Product-added notification sent for product {ProductName}", context.Product.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send product-added notification for product {ProductName}", context.Product.Name);
+            throw;
         }
         finally
         {

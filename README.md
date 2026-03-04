@@ -41,12 +41,13 @@ Prerequisites
        - TLS: enabled
        - Username: your full Gmail address
        - Password: **App password** (recommended; requires 2‑step verification).
-     - **Outlook.com / Office 365**
+     - **Outlook.com / Microsoft 365**
        - Server: `smtp.office365.com`
        - Port: `587`
        - TLS: enabled
-       - Username: your full Outlook/Office 365 address
+       - Username: your full Outlook/Microsoft 365 address
        - Password: your account password or an app password, depending on your org’s settings.
+       - **Note:** Many Microsoft 365 tenants have **SMTP AUTH disabled** for mailboxes. If you get *"535 … SmtpClientAuthentication is disabled"*, this app cannot send via that account until an admin enables SMTP AUTH for your mailbox, or you use a different provider (e.g. **Gmail** with an app password). See **Troubleshooting** below.
 
 Building the application
 ------------------------
@@ -96,9 +97,13 @@ Configuring email and scan interval
    - **Use TLS/SSL**
      - Keep this **checked** for secure SMTP.
    - **From Email**
-     - The email address alerts will be sent from (and to).
+     - The email address alerts are sent *from* (your SMTP account).
    - **From Display Name (optional)**
      - Friendly name visible in your inbox, e.g. `Product Deal Finder`.
+   - **Default Mailbox Name (optional)**
+     - A label for this sending account (e.g. `Gmail`, `Work`) for your reference.
+   - **Default Email Address**
+     - Where to send alerts (price alerts and “product added” confirmations). Leave blank to use **From Email** as the recipient.
    - **SMTP Username**
      - Often the same as **From Email** (full address).
    - **SMTP Password**
@@ -196,12 +201,30 @@ Security and privacy
 Troubleshooting
 ---------------
 
-- **App won’t start / build errors**
-  - Ensure `.NET 8 SDK` is installed and `dotnet --version` prints at least `8.x`.
-  - Rebuild from the `src` directory:
+- **App crashes (window closes immediately or after an action)**
+  - **See the actual error:** Run the app from PowerShell so the exception is visible:
     ```powershell
     cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
-    "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
+    & "C:\Program Files\dotnet\dotnet.exe" run --project "ProductDealFinder\ProductDealFinder.csproj"
+    ```
+    Any unhandled exception will be printed in the console. The app also shows a message box for many errors.
+  - **Database out of date:** If you see errors about a missing table (e.g. `ScanErrors`) or SQLite schema, the local DB was created before a code update. Either:
+    - **Option A – Reset the database (you will lose saved products and settings):** Close the app, then delete the DB file:
+      - `C:\Users\<YOU>\AppData\Local\ProductDealFinder\product-deal-finder.db`
+      Start the app again; it will create a new DB and seed retailers.
+    - **Option B:** Keep the file; the app now tries to create missing tables (e.g. `ScanErrors`) on startup. Re-run the app after updating the code.
+  - **Playwright / browser errors on first run:** Install the browsers (see Prerequisites):
+    ```powershell
+    dotnet tool install --global Microsoft.Playwright.CLI
+    playwright install chromium firefox
+    ```
+
+- **App won’t start / build errors**
+  - Ensure `.NET 8 SDK` is installed and `dotnet --version` prints at least `8.x`.
+  - Rebuild from the `src` directory (use `&` before the path in PowerShell):
+    ```powershell
+    cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
+    & "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
     ```
 
 - **Playwright errors about missing browsers**
@@ -209,6 +232,22 @@ Troubleshooting
     ```powershell
     playwright install chromium firefox
     ```
+
+- **"535 … SmtpClientAuthentication is disabled" (Outlook / Microsoft 365)**
+  - Your mailbox has **SMTP client authentication** turned off by policy. This app uses username + password SMTP; it does not support Microsoft’s modern OAuth flow.
+  - **Options:**
+    1. **Use Gmail instead:** Create a Gmail account (or use an existing one), turn on 2‑step verification, create an **App password**, and use `smtp.gmail.com` / port 587 / TLS in the app. This is the most reliable option.
+    2. **Ask your admin:** A Microsoft 365 admin can enable SMTP AUTH for your mailbox (or for the tenant). See Microsoft’s docs: <https://aka.ms/smtp_auth_disabled>.
+  - Your product and threshold are still saved; only the confirmation email failed to send.
+
+- **"535 … Username and Password not accepted" / "BadCredentials" (Gmail)** <https://support.google.com/accounts/answer/185833?hl=en> **
+  - Gmail no longer accepts your **normal account password** for SMTP. You must use an **App password**.
+  - **Steps:**
+    1. In your Google Account go to **Security** → **2-Step Verification** and turn it **on** (required for App passwords).
+    2. In **Security** → **2-Step Verification** → **App passwords**, create a new App password (choose “Mail” and “Windows Computer” or “Other”).
+    3. Copy the 16‑character password (no spaces). In the app, paste it into **SMTP Password**, then click **Save Email &amp; Scan Settings** so it is stored in Credential Manager.
+    4. Use your **full Gmail address** as both **From Email** and **SMTP Username**; host `smtp.gmail.com`, port `587`, TLS on.
+  - If you already use an App password, re‑enter it and save again (the stored credential may be wrong or expired). See <https://support.google.com/mail/?p=BadCredentials>.
 
 - **No emails received**
   - Double‑check:

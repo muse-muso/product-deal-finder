@@ -82,6 +82,17 @@ public class ScanService : IScanService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while scanning ProductTarget {TargetId}", target.Id);
+
+                var error = new ScanError
+                {
+                    ProductTargetId = target.Id,
+                    Message = ex.Message,
+                    ExceptionType = ex.GetType().FullName,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+
+                db.ScanErrors.Add(error);
+                await db.SaveChangesAsync(cancellationToken);
             }
         }
 
