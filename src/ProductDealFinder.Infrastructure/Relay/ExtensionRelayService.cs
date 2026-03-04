@@ -24,7 +24,7 @@ public sealed class ExtensionRelayService : IExtensionRelayService
     /// Windows Credential Manager key under which the relay shared secret is stored.
     /// The secret is auto-generated on first use and never stored in plain text on disk.
     /// </summary>
-    internal const string RelaySecretCredentialKey = "ProductDealFinder_RelaySecret";
+    public const string RelaySecretCredentialKey = "ProductDealFinder_RelaySecret";
 
     /// <summary>Cached secret for the lifetime of this relay instance.</summary>
     private string? _relaySecret;
