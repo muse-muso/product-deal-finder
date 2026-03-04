@@ -22,15 +22,13 @@ Prerequisites
    - Install **.NET 8 SDK or later** for Windows x64 from `https://dotnet.microsoft.com/download`.
 
 2. **Playwright browsers**
-   - Install the Playwright CLI as a global tool and download browsers (one‑time):
+   - The app uses Playwright’s .NET driver, which expects browsers installed by the *project’s* install script. From the repo `src` folder, **build** the solution, then run (one‑time):
      ```powershell
-     dotnet tool install --global Microsoft.Playwright.CLI
+     cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
+     & "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
+     powershell -ExecutionPolicy Bypass -File ".\ProductDealFinder\bin\Debug\net8.0-windows\playwright.ps1" install
      ```
-   - Open a new PowerShell window and run (from anywhere):
-     ```powershell
-     playwright install chromium firefox
-     ```
-   - This downloads Chromium and Firefox binaries Playwright will use locally.
+   - This downloads the Chromium (and related) binaries that the driver expects. If you see *“Executable doesn't exist at … chromium_headless_shell…”*, run the same `playwright.ps1 install` command again (see **Troubleshooting**).
 
 3. **SMTP email account**
    - Any provider that supports SMTP with username + password (or app password).
@@ -227,11 +225,14 @@ Troubleshooting
     & "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
     ```
 
-- **Playwright errors about missing browsers**
-  - Re‑run:
+- **“Executable doesn't exist at … chromium_headless_shell…” / Playwright missing browsers**
+  - The .NET driver expects browsers installed by the *project’s* script, not only the global CLI. From the `src` folder, **build** then run the install script:
     ```powershell
-    playwright install chromium firefox
+    cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
+    & "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
+    powershell -ExecutionPolicy Bypass -File ".\ProductDealFinder\bin\Debug\net8.0-windows\playwright.ps1" install
     ```
+    Then start the app again. If the script path doesn’t exist, build the solution first so the script is copied to that output folder.
 
 - **"535 … SmtpClientAuthentication is disabled" (Outlook / Microsoft 365)**
   - Your mailbox has **SMTP client authentication** turned off by policy. This app uses username + password SMTP; it does not support Microsoft’s modern OAuth flow.
@@ -240,7 +241,7 @@ Troubleshooting
     2. **Ask your admin:** A Microsoft 365 admin can enable SMTP AUTH for your mailbox (or for the tenant). See Microsoft’s docs: <https://aka.ms/smtp_auth_disabled>.
   - Your product and threshold are still saved; only the confirmation email failed to send.
 
-- **"535 … Username and Password not accepted" / "BadCredentials" (Gmail)** <https://support.google.com/accounts/answer/185833?hl=en> **
+- **"535 … Username and Password not accepted" / "BadCredentials" (Gmail)**
   - Gmail no longer accepts your **normal account password** for SMTP. You must use an **App password**.
   - **Steps:**
     1. In your Google Account go to **Security** → **2-Step Verification** and turn it **on** (required for App passwords).
