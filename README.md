@@ -13,7 +13,7 @@ Both use the same retailers (JB Hi-Fi, Officeworks, Amazon AU, The Good Guys, Ha
 Windows desktop application (in `src/`)
 ---------------------------------------
 
-Windows desktop app to track product prices across the selected Australian retailers and send you email alerts when your desired price is reached. All data and logic run locally on your machine; no external paid services are required.
+Windows desktop app to track product prices across the selected Australian retailers and send you email alerts when your desired price is reached. All data and logic run locally on your machine; no external paid services are required. The UI uses [Material Design In XAML Toolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit) (open source, MIT) for a modern look at no cost.
 
 Supported retailers (launch)
 ----------------------------

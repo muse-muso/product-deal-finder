@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProductDealFinder.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bb31f2bcc1865af4f7d0e0980c4fdc2dc9541552")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+819229399ef6727cb6f70f26c9db452050ec2c8d")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProductDealFinder.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProductDealFinder.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

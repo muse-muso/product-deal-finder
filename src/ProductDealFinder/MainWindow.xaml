@@ -3,115 +3,127 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Product Deal Finder" Height="450" Width="900">
-    <Grid Margin="10">
+        Style="{StaticResource MaterialDesignWindow}"
+        Title="Product Deal Finder" Height="520" Width="920" MinHeight="400" MinWidth="700">
+    <Grid Margin="16">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="2*" MinWidth="280" />
+            <ColumnDefinition Width="3*" MinWidth="360" />
         </Grid.ColumnDefinitions>
 
-        <GroupBox Header="Email / SMTP Settings" Grid.Column="0" Margin="0,0,10,0">
-            <StackPanel Margin="10" VerticalAlignment="Top">
-                <TextBlock Text="SMTP Host" />
-                <TextBox x:Name="SmtpHostTextBox" Margin="0,2,0,8" />
+        <materialDesign:Card Grid.Column="0" Margin="0,0,12,0" Padding="20" UniformCornerRadius="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="0,0,0,8">
+                    <TextBlock Text="Email / SMTP Settings" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16" />
+                    <TextBlock Text="SMTP Host" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="SmtpHostTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <TextBlock Text="SMTP Port" />
-                <TextBox x:Name="SmtpPortTextBox" Margin="0,2,0,8" Text="587" />
+                    <TextBlock Text="SMTP Port" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="SmtpPortTextBox" Margin="0,4,0,12" Text="587" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <CheckBox x:Name="UseSslCheckBox" IsChecked="True" Content="Use TLS/SSL" />
+                    <CheckBox x:Name="UseSslCheckBox" IsChecked="True" Content="Use TLS/SSL" Margin="0,0,0,12" />
+
+                    <TextBlock Text="From Email" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="FromEmailTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <TextBlock Text="From Display Name (optional)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="FromDisplayNameTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <TextBlock Text="Default Mailbox Name (optional)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="DefaultMailboxNameTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <TextBlock Text="Default Email Address (alerts; blank = From Email)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="DefaultNotificationEmailTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <TextBlock Text="SMTP Username" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="SmtpUserNameTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <TextBlock Text="SMTP Password (Credential Manager; blank = keep existing)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <PasswordBox x:Name="SmtpPasswordBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignFilledPasswordBox}" />
+
+                    <TextBlock Text="Scan Interval (minutes)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="ScanIntervalMinutesTextBox" Margin="0,4,0,12" Text="60" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <Separator Margin="0,12,0,12" />
+                    <TextBlock Text="Extension relay (Firefox → email)" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
+                    <TextBlock Text="Firefox extension can send price alerts here; this app emails you." FontSize="12" Margin="0,0,0,8" Opacity="0.75" />
+                    <CheckBox x:Name="ExtensionRelayEnabledCheckBox" Content="Enable extension relay" Margin="0,0,0,8" />
+                    <TextBlock Text="Relay port (default 8765)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="ExtensionRelayPortTextBox" Margin="0,4,0,12" Text="8765" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                    <TextBlock Text="Secret token (optional; set same in extension)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="ExtensionRelaySecretTextBox" Margin="0,4,0,16" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <Button Width="220" HorizontalAlignment="Left"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Click="OnSaveEmailSettingsClick">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Save Email &amp; Scan Settings" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
+            </ScrollViewer>
+        </materialDesign:Card>
 
-                <TextBlock Text="From Email" />
-                <TextBox x:Name="FromEmailTextBox" Margin="0,2,0,8" />
+        <materialDesign:Card Grid.Column="1" Padding="20" UniformCornerRadius="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock Text="Add Product &amp; Target" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16" />
+                    <TextBlock Text="Product Name" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="ProductNameTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <TextBlock Text="From Display Name (optional)" />
-                <TextBox x:Name="FromDisplayNameTextBox" Margin="0,2,0,8" />
+                    <TextBlock Text="Model Number (optional)" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="ModelNumberTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <TextBlock Text="Default Mailbox Name (optional label, e.g. Gmail, Work)" />
-                <TextBox x:Name="DefaultMailboxNameTextBox" Margin="0,2,0,8" />
+                    <TextBlock Text="Retailer" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <ComboBox x:Name="RetailerComboBox" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,4,0,12"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}" />
 
-                <TextBlock Text="Default Email Address (where to send alerts; leave blank to use From Email)" />
-                <TextBox x:Name="DefaultNotificationEmailTextBox" Margin="0,2,0,8" />
+                    <TextBlock Text="Product Page URL" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="ProductPageUrlTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <TextBlock Text="SMTP Username" />
-                <TextBox x:Name="SmtpUserNameTextBox" Margin="0,2,0,8" />
+                    <TextBlock Text="Optional CSS Price Selector Override" FontSize="12" Margin="0,0,0,2" Opacity="0.8" />
+                    <TextBox x:Name="PriceSelectorOverrideTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <TextBlock Text="SMTP Password (saved in Windows Credential Manager; leave blank to keep existing)" />
-                <PasswordBox x:Name="SmtpPasswordBox" Margin="0,2,0,8" />
+                    <TextBlock Text="Price Threshold (AUD)" Style="{StaticResource MaterialDesignBody2TextBlock}" />
+                    <TextBox x:Name="ThresholdValueTextBox" Margin="0,4,0,12" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
 
-                <TextBlock Text="Scan Interval (minutes)" />
-                <TextBox x:Name="ScanIntervalMinutesTextBox" Margin="0,2,0,8" Text="60" />
+                    <Button Width="220" HorizontalAlignment="Left" Margin="0,0,0,8"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Click="OnSaveProductTargetClick">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Save Product &amp; Threshold" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
 
-                <Separator Margin="0,8,0,8" />
-                <TextBlock Text="Extension relay (Firefox → email)" FontWeight="SemiBold" />
-                <Label Content="When enabled, the Firefox extension can send price alerts here and this app will email you (no extra cost)." Padding="0,0,0,4" />
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                    <CheckBox x:Name="ExtensionRelayEnabledCheckBox" Content="Enable extension relay" />
+                    <Separator Margin="0,16,0,16" Style="{StaticResource MaterialDesignLightSeparator}" />
+
+                    <Button x:Name="RunScanNowButton" HorizontalAlignment="Left" Margin="0,0,0,12"
+                            Padding="20,10" Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Click="OnRunScanNowClick">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Play" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Run scan now (manual / test)" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <TextBlock Text="Status / Last Action" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
+                    <TextBox x:Name="StatusTextBox" Margin="0,4,0,12" IsReadOnly="True" Height="72" TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                    <Button HorizontalAlignment="Left" Padding="20,10"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Click="OnOpenManagementWindowClick">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="FormatListBulleted" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Open Management Window" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
-                <TextBlock Text="Relay port (default 8765)" />
-                <TextBox x:Name="ExtensionRelayPortTextBox" Margin="0,2,0,8" Text="8765" />
-                <TextBlock Text="Secret token (optional; set same in extension)" />
-                <TextBox x:Name="ExtensionRelaySecretTextBox" Margin="0,2,0,8" />
-
-                <Button Content="Save Email &amp; Scan Settings"
-                        Width="200"
-                        HorizontalAlignment="Left"
-                        Click="OnSaveEmailSettingsClick" />
-            </StackPanel>
-        </GroupBox>
-
-        <GroupBox Header="Add Product &amp; Target" Grid.Column="1">
-            <StackPanel Margin="10" VerticalAlignment="Top">
-                <TextBlock Text="Product Name" />
-                <TextBox x:Name="ProductNameTextBox" Margin="0,2,0,8" />
-
-                <TextBlock Text="Model Number (optional)" />
-                <TextBox x:Name="ModelNumberTextBox" Margin="0,2,0,8" />
-
-                <TextBlock Text="Retailer" />
-                <ComboBox x:Name="RetailerComboBox"
-                          DisplayMemberPath="Name"
-                          SelectedValuePath="Id"
-                          Margin="0,2,0,8" />
-
-                <TextBlock Text="Product Page URL" />
-                <TextBox x:Name="ProductPageUrlTextBox" Margin="0,2,0,8" />
-
-                <TextBlock Text="Optional CSS Price Selector Override" />
-                <TextBox x:Name="PriceSelectorOverrideTextBox" Margin="0,2,0,8" />
-
-                <TextBlock Text="Price Threshold (AUD)" />
-                <TextBox x:Name="ThresholdValueTextBox" Margin="0,2,0,8" />
-
-                <Button Content="Save Product &amp; Threshold"
-                        Width="200"
-                        HorizontalAlignment="Left"
-                        Click="OnSaveProductTargetClick" />
-
-                <Separator Margin="0,10,0,10" />
-
-                <Button x:Name="RunScanNowButton"
-                        Content="Run scan now (manual / test)"
-                        Width="200"
-                        HorizontalAlignment="Left"
-                        Margin="0,0,0,8"
-                        Click="OnRunScanNowClick" />
-
-                <TextBlock Text="Status / Last Action" FontWeight="Bold" />
-                <TextBox x:Name="StatusTextBox"
-                         Margin="0,2,0,8"
-                         IsReadOnly="True"
-                         Height="60"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" />
-
-                <Button Content="Open Management Window"
-                        Width="200"
-                        HorizontalAlignment="Left"
-                        Click="OnOpenManagementWindowClick" />
-            </StackPanel>
-        </GroupBox>
+            </ScrollViewer>
+        </materialDesign:Card>
     </Grid>
 </Window>

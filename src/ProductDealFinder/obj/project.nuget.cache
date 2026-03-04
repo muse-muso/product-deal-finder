@@ -1,12 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "Th914QPoXEI=",
+  "dgSpecHash": "0nffuRC9mVs=",
   "success": true,
   "projectFilePath": "C:\\Users\\BV\\Documents\\github\\product-deal-finder\\src\\ProductDealFinder\\ProductDealFinder.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\BV\\.nuget\\packages\\bouncycastle.cryptography\\2.6.2\\bouncycastle.cryptography.2.6.2.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\credentialmanagement\\1.0.2\\credentialmanagement.1.0.2.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\mailkit\\4.15.0\\mailkit.4.15.0.nupkg.sha512",
+    "C:\\Users\\BV\\.nuget\\packages\\materialdesigncolors\\3.1.0\\materialdesigncolors.3.1.0.nupkg.sha512",
+    "C:\\Users\\BV\\.nuget\\packages\\materialdesignthemes\\5.1.0\\materialdesignthemes.5.1.0.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\microsoft.data.sqlite.core\\8.0.8\\microsoft.data.sqlite.core.8.0.8.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\microsoft.entityframeworkcore\\8.0.8\\microsoft.entityframeworkcore.8.0.8.nupkg.sha512",
@@ -46,6 +48,7 @@
     "C:\\Users\\BV\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\10.0.3\\microsoft.extensions.options.configurationextensions.10.0.3.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.3\\microsoft.extensions.primitives.10.0.3.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\microsoft.playwright\\1.58.0\\microsoft.playwright.1.58.0.nupkg.sha512",
+    "C:\\Users\\BV\\.nuget\\packages\\microsoft.xaml.behaviors.wpf\\1.1.39\\microsoft.xaml.behaviors.wpf.1.1.39.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\mimekit\\4.15.0\\mimekit.4.15.0.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.6\\sqlitepclraw.bundle_e_sqlite3.2.1.6.nupkg.sha512",
     "C:\\Users\\BV\\.nuget\\packages\\sqlitepclraw.core\\2.1.6\\sqlitepclraw.core.2.1.6.nupkg.sha512",

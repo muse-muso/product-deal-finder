@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using ProductDealFinder.Core.Data;
 using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Scheduling;
@@ -11,6 +12,7 @@ using ProductDealFinder.Infrastructure.Email;
 using ProductDealFinder.Infrastructure.Relay;
 using ProductDealFinder.Infrastructure.Scheduling;
 using ProductDealFinder.Infrastructure.Scraping;
+using MaterialDesignThemes.Wpf;
 
 namespace ProductDealFinder;
 
@@ -24,6 +26,8 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        ApplyWindowsSystemTheme();
 
         // Catch unhandled exceptions so the app doesn't exit silently
         DispatcherUnhandledException += (_, args) =>
@@ -125,5 +129,36 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    /// <summary>
+    /// Applies light or dark theme to match Windows desktop setting (Settings → Personalization → Colors → Choose your mode).
+    /// </summary>
+    private static void ApplyWindowsSystemTheme()
+    {
+        try
+        {
+            bool useLightTheme = true;
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int value)
+                    useLightTheme = value != 0;
+            }
+            catch
+            {
+                // Default to light if registry read fails (e.g. older Windows)
+            }
+
+            var paletteHelper = new PaletteHelper();
+            var theme = paletteHelper.GetTheme();
+            theme.SetBaseTheme(useLightTheme ? BaseTheme.Light : BaseTheme.Dark);
+            paletteHelper.SetTheme(theme);
+        }
+        catch
+        {
+            // Keep default theme from App.xaml if Material Design theme switch fails
+        }
     }
 }
