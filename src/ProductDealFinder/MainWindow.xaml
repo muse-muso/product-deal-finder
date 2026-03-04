@@ -1,0 +1,88 @@
+<Window x:Class="ProductDealFinder.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Product Deal Finder" Height="450" Width="900">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <GroupBox Header="Email / SMTP Settings" Grid.Column="0" Margin="0,0,10,0">
+            <StackPanel Margin="10" VerticalAlignment="Top">
+                <TextBlock Text="SMTP Host" />
+                <TextBox x:Name="SmtpHostTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="SMTP Port" />
+                <TextBox x:Name="SmtpPortTextBox" Margin="0,2,0,8" Text="587" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <CheckBox x:Name="UseSslCheckBox" IsChecked="True" Content="Use TLS/SSL" />
+                </StackPanel>
+
+                <TextBlock Text="From Email" />
+                <TextBox x:Name="FromEmailTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="From Display Name (optional)" />
+                <TextBox x:Name="FromDisplayNameTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="SMTP Username" />
+                <TextBox x:Name="SmtpUserNameTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="SMTP Password (stored securely in Windows Credential Manager)" />
+                <PasswordBox x:Name="SmtpPasswordBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="Scan Interval (minutes)" />
+                <TextBox x:Name="ScanIntervalMinutesTextBox" Margin="0,2,0,8" Text="60" />
+
+                <Button Content="Save Email &amp; Scan Settings"
+                        Width="200"
+                        HorizontalAlignment="Left"
+                        Click="OnSaveEmailSettingsClick" />
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Add Product &amp; Target" Grid.Column="1">
+            <StackPanel Margin="10" VerticalAlignment="Top">
+                <TextBlock Text="Product Name" />
+                <TextBox x:Name="ProductNameTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="Model Number (optional)" />
+                <TextBox x:Name="ModelNumberTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="Retailer" />
+                <ComboBox x:Name="RetailerComboBox"
+                          DisplayMemberPath="Name"
+                          SelectedValuePath="Id"
+                          Margin="0,2,0,8" />
+
+                <TextBlock Text="Product Page URL" />
+                <TextBox x:Name="ProductPageUrlTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="Optional CSS Price Selector Override" />
+                <TextBox x:Name="PriceSelectorOverrideTextBox" Margin="0,2,0,8" />
+
+                <TextBlock Text="Price Threshold (AUD)" />
+                <TextBox x:Name="ThresholdValueTextBox" Margin="0,2,0,8" />
+
+                <Button Content="Save Product &amp; Threshold"
+                        Width="200"
+                        HorizontalAlignment="Left"
+                        Click="OnSaveProductTargetClick" />
+
+                <Separator Margin="0,10,0,10" />
+
+                <TextBlock Text="Status / Last Action" FontWeight="Bold" />
+                <TextBox x:Name="StatusTextBox"
+                         Margin="0,2,0,0"
+                         IsReadOnly="True"
+                         Height="80"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" />
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</Window>

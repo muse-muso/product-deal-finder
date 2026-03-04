@@ -1,0 +1,15 @@
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\bin\Debug\net8.0\ProductDealFinder.Core.deps.json
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\bin\Debug\net8.0\ProductDealFinder.Core.runtimeconfig.json
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\bin\Debug\net8.0\ProductDealFinder.Core.dll
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\bin\Debug\net8.0\ProductDealFinder.Core.pdb
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.csproj.AssemblyReference.cache
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.AssemblyInfoInputs.cache
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.AssemblyInfo.cs
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.csproj.CoreCompileInputs.cache
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.sourcelink.json
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.dll
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\refint\ProductDealFinder.Core.dll
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.pdb
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ProductDealFinder.Core.genruntimeconfig.cache
+C:\Users\BV\Documents\github\product-deal-finder\src\ProductDealFinder.Core\obj\Debug\net8.0\ref\ProductDealFinder.Core.dll
