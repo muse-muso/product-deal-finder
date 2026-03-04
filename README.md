@@ -1,7 +1,19 @@
 product-deal-finder
 ====================
 
-Windows desktop application to track product prices across selected Australian retailers and send you email alerts when your desired price is reached. All data and logic run locally on your machine; no external paid services are required.
+This repo contains two ways to track product prices on Australian retailers:
+
+- **Desktop app** (`src/`) – Windows WPF application. Uses Playwright to scan product pages on a schedule and sends **email** alerts when the price reaches your target. See below for build and run.
+- **Firefox extension** (`extension/`) – Browser extension. Tracks products when you **visit** product pages and shows **browser notifications** when the price is at or below your target. See [extension/README.md](extension/README.md) for how to load and use it.
+
+Both use the same retailers (JB Hi-Fi, Officeworks, Amazon AU, The Good Guys, Harvey Norman) and the same price selectors where applicable.
+
+---
+
+Windows desktop application (in `src/`)
+---------------------------------------
+
+Windows desktop app to track product prices across the selected Australian retailers and send you email alerts when your desired price is reached. All data and logic run locally on your machine; no external paid services are required.
 
 Supported retailers (launch)
 ----------------------------

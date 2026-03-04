@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Product Deal Finder – Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options">
+    <h1>Product Deal Finder – Options</h1>
+
+    <section>
+      <label class="checkbox">
+        <input type="checkbox" id="notificationsEnabled" checked>
+        Show browser notifications when a tracked product reaches your target price
+      </label>
+    </section>
+
+    <section>
+      <label for="currency">Default currency (for display)</label>
+      <select id="currency">
+        <option value="AUD" selected>AUD</option>
+        <option value="USD">USD</option>
+        <option value="NZD">NZD</option>
+      </select>
+    </section>
+
+    <button id="saveBtn" class="btn primary">Save</button>
+    <p id="saveStatus" class="status"></p>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

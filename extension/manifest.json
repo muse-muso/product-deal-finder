@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Product Deal Finder",
+  "version": "1.0.0",
+  "description": "Track product prices on Australian retailers and get notified when the price drops to your target.",
+  "permissions": [
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.jbhifi.com.au/*",
+    "https://www.amazon.com.au/*",
+    "https://www.thegoodguys.com.au/*",
+    "https://www.officeworks.com.au/*",
+    "https://www.harveynorman.com.au/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.jbhifi.com.au/*",
+        "https://www.amazon.com.au/*",
+        "https://www.thegoodguys.com.au/*",
+        "https://www.officeworks.com.au/*",
+        "https://www.harveynorman.com.au/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Product Deal Finder"
+  },
+  "options_ui": {
+    "page": "options/options.html"
+  }
+}

@@ -1,0 +1,110 @@
+/**
+ * Content script: runs on retailer product pages. Extracts price and product info,
+ * sends to background for comparison with tracked targets. Uses same selectors as desktop app.
+ */
+
+(function () {
+  const RETAILER_CONFIG = {
+    'www.jbhifi.com.au': {
+      code: 'JB_HIFI',
+      name: 'JB Hi-Fi',
+      selectors: '[class*="PriceTag_actualPrice"]'
+    },
+    'www.officeworks.com.au': {
+      code: 'OFFICEWORKS',
+      name: 'Officeworks',
+      selectors: 'div[class*="UnitPrice"]'
+    },
+    'www.amazon.com.au': {
+      code: 'AMAZON_AU',
+      name: 'Amazon Australia',
+      selectors: '#priceblock_ourprice, #priceblock_dealprice, span.a-price span.a-offscreen, .a-price .a-offscreen'
+    },
+    'www.thegoodguys.com.au': {
+      code: 'THE_GOOD_GUYS',
+      name: 'The Good Guys',
+      selectors: '.price, [data-testid="product-price"], [itemprop="price"]'
+    },
+    'www.harveynorman.com.au': {
+      code: 'HARVEY_NORMAN',
+      name: 'Harvey Norman',
+      selectors: '.price, [data-testid="product-price"], [itemprop="price"]'
+    }
+  };
+
+  const PRICE_REGEX = /\$?\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})|\d+(?:\.\d{2})?)/;
+
+  function getRetailerFromHost(host) {
+    return RETAILER_CONFIG[host] || null;
+  }
+
+  function getTextFromSelector(doc, selector) {
+    const combined = selector.split(',').map(s => s.trim());
+    for (const sel of combined) {
+      try {
+        const el = doc.querySelector(sel);
+        if (el && el.textContent) return el.textContent.trim();
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function getBodyText(doc) {
+    const body = doc.body;
+    return body ? body.innerText.trim() : null;
+  }
+
+  function parsePrice(text) {
+    if (!text) return null;
+    const m = text.match(PRICE_REGEX);
+    if (!m) return null;
+    const num = m[1].replace(/,/g, '').replace(/\s/g, '');
+    const val = parseFloat(num);
+    return isNaN(val) ? null : val;
+  }
+
+  function getProductName(doc) {
+    const ogTitle = doc.querySelector('meta[property="og:title"]');
+    if (ogTitle && ogTitle.getAttribute('content')) return ogTitle.getAttribute('content').trim();
+    if (doc.title) return doc.title.trim();
+    return null;
+  }
+
+  function extractPriceAndName(doc, hostConfig) {
+    const selectors = hostConfig ? hostConfig.selectors : null;
+    let text = selectors ? getTextFromSelector(doc, selectors) : null;
+    if (!text) text = getBodyText(doc);
+    const price = parsePrice(text);
+    const productName = getProductName(doc);
+    return { price, productName, rawText: text ? text.substring(0, 200) : null };
+  }
+
+  function getPagePayload() {
+    const host = window.location.hostname;
+    const retailer = getRetailerFromHost(host);
+    const { price, productName, rawText } = extractPriceAndName(document, retailer);
+    const url = window.location.href;
+    return {
+      url,
+      host,
+      retailerCode: retailer ? retailer.code : 'GENERIC',
+      retailerName: retailer ? retailer.name : 'Unknown',
+      price,
+      productName: productName || document.title || url,
+      rawText
+    };
+  }
+
+  function sendPageData() {
+    browser.runtime.sendMessage({ type: 'PAGE_DATA', payload: getPagePayload() }).catch(() => {});
+  }
+
+  browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg.type === 'GET_PAGE_DATA') {
+      sendResponse(getPagePayload());
+    }
+    return false;
+  });
+
+  sendPageData();
+})();

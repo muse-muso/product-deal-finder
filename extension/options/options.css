@@ -1,0 +1,59 @@
+.options {
+  max-width: 480px;
+  padding: 24px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+h1 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+}
+
+section {
+  margin-bottom: 20px;
+}
+
+section label:not(.checkbox) {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox input {
+  margin-top: 4px;
+}
+
+select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.btn.primary {
+  padding: 10px 18px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn.primary:hover {
+  background: #1d4ed8;
+}
+
+.status {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #059669;
+}
