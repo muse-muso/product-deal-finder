@@ -30,6 +30,36 @@
       </select>
     </section>
 
+    <section class="email-alert">
+      <h2>Email price alerts (free)</h2>
+      <p>When a price drops to your target, open a <strong>draft email</strong> in your default mail app or Gmail/Outlook. You click Send — no server, no cost.</p>
+      <label class="checkbox">
+        <input type="checkbox" id="emailAlertEnabled">
+        Open draft email when price reaches target
+      </label>
+      <div class="row">
+        <label for="emailAlertTo">To (your email or any address)</label>
+        <input type="email" id="emailAlertTo" placeholder="you@example.com">
+      </div>
+    </section>
+
+    <section class="desktop-relay">
+      <h2>Automatic email via desktop app</h2>
+      <p>If you run the <strong>Product Deal Finder desktop app</strong> (Windows), enable the relay there and below. The extension will POST alerts to the app, which sends email via your SMTP — fully automatic, $0.</p>
+      <label class="checkbox">
+        <input type="checkbox" id="emailViaDesktopApp">
+        Send price alerts to desktop app (automatic email)
+      </label>
+      <div class="row">
+        <label for="desktopAppUrl">Desktop app URL</label>
+        <input type="text" id="desktopAppUrl" placeholder="http://127.0.0.1:8765">
+      </div>
+      <div class="row">
+        <label for="desktopAppSecret">Secret token (must match desktop app)</label>
+        <input type="text" id="desktopAppSecret" placeholder="optional">
+      </div>
+    </section>
+
     <button id="saveBtn" class="btn primary">Save</button>
     <p id="saveStatus" class="status"></p>
 

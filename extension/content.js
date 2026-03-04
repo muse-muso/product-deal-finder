@@ -1,9 +1,13 @@
 /**
  * Content script: runs on retailer product pages. Extracts price and product info,
  * sends to background for comparison with tracked targets. Uses same selectors as desktop app.
+ * Debug: open DevTools (F12) → Console on the product page; look for logs starting with [PDF].
  */
 
 (function () {
+  const DEBUG = false; // set to true and reload to see [PDF] logs in Console (F12)
+  const log = (...args) => { if (DEBUG) console.log('[PDF]', ...args); };
+
   const RETAILER_CONFIG = {
     'www.jbhifi.com.au': {
       code: 'JB_HIFI',
@@ -43,8 +47,15 @@
     for (const sel of combined) {
       try {
         const el = doc.querySelector(sel);
-        if (el && el.textContent) return el.textContent.trim();
-      } catch (_) {}
+        if (el && el.textContent) {
+          const text = el.textContent.trim();
+          log('selector matched:', sel, '→ text:', text);
+          return text;
+        }
+        log('selector no match or empty:', sel);
+      } catch (e) {
+        log('selector error:', sel, e.message);
+      }
     }
     return null;
   }
@@ -73,9 +84,14 @@
   function extractPriceAndName(doc, hostConfig) {
     const selectors = hostConfig ? hostConfig.selectors : null;
     let text = selectors ? getTextFromSelector(doc, selectors) : null;
-    if (!text) text = getBodyText(doc);
+    if (!text) {
+      log('no text from selectors, trying body');
+      text = getBodyText(doc);
+      if (text) log('body snippet:', text.substring(0, 150));
+    }
     const price = parsePrice(text);
     const productName = getProductName(doc);
+    log('extract result:', { price, productName: productName ? productName.slice(0, 50) : null, textLen: text ? text.length : 0 });
     return { price, productName, rawText: text ? text.substring(0, 200) : null };
   }
 
@@ -106,5 +122,38 @@
     return false;
   });
 
-  sendPageData();
+  // Run once, then retry on a timer and when the price element appears (JB Hi-Fi etc. often load price via JS).
+  let runCount = 0;
+  function runExtract() {
+    runCount += 1;
+    log('runExtract #' + runCount, new Date().toISOString());
+    sendPageData();
+  }
+
+  const host = window.location.hostname;
+  const config = getRetailerFromHost(host);
+  log('content script loaded', host, 'selectors:', config ? config.selectors : 'none');
+
+  runExtract();
+  [1500, 3500].forEach(ms => setTimeout(() => { log('retry at', ms + 'ms'); runExtract(); }, ms));
+
+  // When a node matching the price selector appears (e.g. React hydration), extract once.
+  const selectorList = config ? config.selectors : null;
+  if (selectorList && document.body) {
+    const selectors = selectorList.split(',').map(s => s.trim());
+    const observer = new MutationObserver(() => {
+      for (const sel of selectors) {
+        try {
+          if (document.querySelector(sel)) {
+            log('MutationObserver: element appeared', sel);
+            observer.disconnect();
+            runExtract();
+            return;
+          }
+        } catch (_) {}
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => { observer.disconnect(); log('observer stopped after 8s'); }, 8000);
+  }
 })();

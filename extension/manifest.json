@@ -14,7 +14,9 @@
     "https://www.amazon.com.au/*",
     "https://www.thegoodguys.com.au/*",
     "https://www.officeworks.com.au/*",
-    "https://www.harveynorman.com.au/*"
+    "https://www.harveynorman.com.au/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
   ],
   "background": {
     "scripts": ["background.js"]

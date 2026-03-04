@@ -44,6 +44,17 @@
                 <TextBlock Text="Scan Interval (minutes)" />
                 <TextBox x:Name="ScanIntervalMinutesTextBox" Margin="0,2,0,8" Text="60" />
 
+                <Separator Margin="0,8,0,8" />
+                <TextBlock Text="Extension relay (Firefox → email)" FontWeight="SemiBold" />
+                <Label Content="When enabled, the Firefox extension can send price alerts here and this app will email you (no extra cost)." Padding="0,0,0,4" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <CheckBox x:Name="ExtensionRelayEnabledCheckBox" Content="Enable extension relay" />
+                </StackPanel>
+                <TextBlock Text="Relay port (default 8765)" />
+                <TextBox x:Name="ExtensionRelayPortTextBox" Margin="0,2,0,8" Text="8765" />
+                <TextBlock Text="Secret token (optional; set same in extension)" />
+                <TextBox x:Name="ExtensionRelaySecretTextBox" Margin="0,2,0,8" />
+
                 <Button Content="Save Email &amp; Scan Settings"
                         Width="200"
                         HorizontalAlignment="Left"

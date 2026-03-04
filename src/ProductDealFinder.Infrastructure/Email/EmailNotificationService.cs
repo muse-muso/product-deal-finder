@@ -155,6 +155,54 @@ public class EmailNotificationService : IEmailNotificationService
         }
     }
 
+    public async Task SendExtensionPriceAlertAsync(ExtensionAlertPayload payload, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        UserSettings? settings = await db.UserSettings
+            .OrderByDescending(s => s.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (settings is null)
+        {
+            _logger.LogWarning("Cannot send extension price alert: user email settings are not configured.");
+            throw new InvalidOperationException("User email settings are not configured.");
+        }
+
+        string password = GetSmtpPasswordOrThrow(settings);
+        string toAddress = string.IsNullOrWhiteSpace(settings.DefaultNotificationEmail) ? settings.FromEmail : settings.DefaultNotificationEmail.Trim();
+
+        string subject = "Price alert: " + payload.ProductName;
+        var body = new StringBuilder();
+        body.AppendLine("Product: " + payload.ProductName);
+        body.AppendLine("Retailer: " + payload.RetailerName);
+        body.AppendLine("Current price: " + payload.Currency + " " + payload.Price.ToString("F2"));
+        body.AppendLine("Your target: " + payload.Currency + " " + payload.Threshold.ToString("F2"));
+        body.AppendLine("Product page: " + payload.Url);
+
+        using var message = new MimeKit.MimeMessage();
+        message.From.Add(new MimeKit.MailboxAddress(
+            settings.FromDisplayName ?? settings.FromEmail,
+            settings.FromEmail));
+        message.To.Add(new MimeKit.MailboxAddress(toAddress, toAddress));
+        message.Subject = subject;
+        message.Body = new MimeKit.TextPart("plain") { Text = body.ToString() };
+
+        using var client = new SmtpClient();
+        try
+        {
+            await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort,
+                settings.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, cancellationToken);
+            await client.AuthenticateAsync(settings.SmtpUserName, password, cancellationToken);
+            await client.SendAsync(message, cancellationToken);
+            _logger.LogInformation("Extension price alert sent for {ProductName}", payload.ProductName);
+        }
+        finally
+        {
+            await client.DisconnectAsync(true, cancellationToken);
+        }
+    }
+
     private static string GetSmtpPasswordOrThrow(UserSettings settings)
     {
         if (string.IsNullOrWhiteSpace(settings.SmtpPasswordCredentialKey))

@@ -56,6 +56,19 @@ section {
   margin-left: 8px;
 }
 
+.email-alert .row {
+  margin-top: 8px;
+}
+
+.email-alert .row input {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
 section label:not(.checkbox) {
   display: block;
   margin-bottom: 6px;

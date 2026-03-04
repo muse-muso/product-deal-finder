@@ -37,6 +37,23 @@ public class UserSettings
 
     public string DefaultCurrency { get; set; } = "AUD";
 
+    /// <summary>
+    /// When true, the app listens for price alerts from the Firefox extension and sends email via SMTP.
+    /// Null when the column was added by ALTER to an existing DB (existing rows).
+    /// </summary>
+    public bool? ExtensionRelayEnabled { get; set; }
+
+    /// <summary>
+    /// Port for the extension relay HTTP listener (default 8765).
+    /// Null when the column was added by ALTER to an existing DB (existing rows).
+    /// </summary>
+    public int? ExtensionRelayPort { get; set; } = 8765;
+
+    /// <summary>
+    /// Optional secret token; extension must send it in X-Extension-Secret header for requests to be accepted.
+    /// </summary>
+    public string? ExtensionRelaySecret { get; set; }
+
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }
 

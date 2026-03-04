@@ -62,6 +62,8 @@ Prerequisites
 Building the application
 ------------------------
 
+All commands below are for **PowerShell**. When the path to an executable contains spaces (e.g. `C:\Program Files\dotnet\dotnet.exe`), you must use the **call operator** `&` before the quoted path; otherwise PowerShell treats the string as an expression and does not run the program.
+
 1. Open a terminal and go to the `src` folder:
    ```powershell
    cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
@@ -69,15 +71,30 @@ Building the application
 
 2. Build the solution:
    ```powershell
-   "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
+   & "C:\Program Files\dotnet\dotnet.exe" build ProductDealFinder.sln
    ```
 
 3. Run the WPF application:
    ```powershell
-   "C:\Program Files\dotnet\dotnet.exe" run --project "ProductDealFinder\ProductDealFinder.csproj"
+   & "C:\Program Files\dotnet\dotnet.exe" run --project "ProductDealFinder\ProductDealFinder.csproj"
    ```
 
    The main window (`Product Deal Finder`) should appear. A background scan service will also start automatically inside the app.
+
+How to check logs
+-----------------
+
+The app does not write log files by default. To see errors and log output when the app crashes or misbehaves, run it from **PowerShell** so the console stays open and shows the full exception and any log messages:
+
+```powershell
+cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
+& "C:\Program Files\dotnet\dotnet.exe" run --project "ProductDealFinder\ProductDealFinder.csproj"
+```
+
+- **Crashes:** When an unhandled exception occurs, the full stack trace and message (e.g. *"null at ordinal 5"*) appear in this console before the window closes.
+- **Normal runs:** You can leave the console open while using the app; scan and relay logs will appear there at **Information** level.
+
+If you prefer to run the app by double‑clicking or from Start, use the command above once when something goes wrong to capture the error.
 
 First‑run behaviour and data storage
 ------------------------------------
@@ -122,6 +139,8 @@ Configuring email and scan interval
    - **Scan Interval (minutes)**
      - How often the background scanner should run and check prices.
      - Default is `60` (once an hour). You can safely set `30`, `15`, etc., but avoid very low intervals to reduce load on retailer sites.
+   - **Extension relay (Firefox → email)**
+     - If you use the **Firefox extension** (see `extension/` in this repo), you can enable **“Enable extension relay”** and set the **Relay port** (default `8765`). The app will listen on `http://127.0.0.1:8765` for price alerts from the extension and send them by email using your SMTP. Optional **Secret token**: set the same value in the extension Options so only your extension can use the relay.
 
 3. Click **“Save Email &amp; Scan Settings”**.
 
@@ -218,6 +237,7 @@ Troubleshooting
     & "C:\Program Files\dotnet\dotnet.exe" run --project "ProductDealFinder\ProductDealFinder.csproj"
     ```
     Any unhandled exception will be printed in the console. The app also shows a message box for many errors.
+  - **"Null at ordinal 5" (or similar) / app closes immediately after start:** The database was created with an older schema; a column that was added later (e.g. extension relay settings) is `NULL` for your existing row, but the app expected a value. This is now handled in code. If you still see it, run from PowerShell (see **How to check logs** above) to confirm the full error, then either **Option A** (delete the DB file and start fresh) or **Option B** (ensure the app is up to date and run again).
   - **Database out of date:** If you see errors about a missing table (e.g. `ScanErrors`) or SQLite schema, the local DB was created before a code update. Either:
     - **Option A – Reset the database (you will lose saved products and settings):** Close the app, then delete the DB file:
       - `C:\Users\<YOU>\AppData\Local\ProductDealFinder\product-deal-finder.db`

@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="CredentialManagement" Version="1.0.2" />
     <PackageReference Include="MailKit" Version="4.15.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.3" />
     <PackageReference Include="Microsoft.Playwright" Version="1.58.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
@@ -16,6 +17,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
 </Project>

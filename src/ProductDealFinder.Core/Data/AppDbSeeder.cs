@@ -81,19 +81,11 @@ public static class AppDbSeeder
 
     private static async Task EnsureUserSettingsColumnsAsync(AppDbContext db, CancellationToken cancellationToken)
     {
-        foreach (string column in new[] { "DefaultMailboxName", "DefaultNotificationEmail" })
-        {
-            try
-            {
-                await db.Database.ExecuteSqlRawAsync(
-                    $"ALTER TABLE UserSettings ADD COLUMN {column} TEXT",
-                    cancellationToken);
-            }
-            catch
-            {
-                // Column already exists; ignore
-            }
-        }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE UserSettings ADD COLUMN DefaultMailboxName TEXT", cancellationToken); } catch { }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE UserSettings ADD COLUMN DefaultNotificationEmail TEXT", cancellationToken); } catch { }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE UserSettings ADD COLUMN ExtensionRelayEnabled INTEGER", cancellationToken); } catch { }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE UserSettings ADD COLUMN ExtensionRelayPort INTEGER", cancellationToken); } catch { }
+        try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE UserSettings ADD COLUMN ExtensionRelaySecret TEXT", cancellationToken); } catch { }
     }
 }
 

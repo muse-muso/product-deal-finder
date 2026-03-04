@@ -1,6 +1,11 @@
 (function () {
   const notificationsEl = document.getElementById('notificationsEnabled');
   const currencyEl = document.getElementById('currency');
+  const emailAlertEnabledEl = document.getElementById('emailAlertEnabled');
+  const emailAlertToEl = document.getElementById('emailAlertTo');
+  const emailViaDesktopAppEl = document.getElementById('emailViaDesktopApp');
+  const desktopAppUrlEl = document.getElementById('desktopAppUrl');
+  const desktopAppSecretEl = document.getElementById('desktopAppSecret');
   const saveBtn = document.getElementById('saveBtn');
   const saveStatus = document.getElementById('saveStatus');
   const exportBtn = document.getElementById('exportBtn');
@@ -16,13 +21,23 @@
     if (opts) {
       notificationsEl.checked = opts.notificationsEnabled !== false;
       if (opts.currency) currencyEl.value = opts.currency;
+      emailAlertEnabledEl.checked = opts.emailAlertEnabled === true;
+      emailAlertToEl.value = opts.emailAlertTo || '';
+      emailViaDesktopAppEl.checked = opts.emailViaDesktopApp === true;
+      desktopAppUrlEl.value = opts.desktopAppUrl || 'http://127.0.0.1:8765';
+      desktopAppSecretEl.value = opts.desktopAppSecret || '';
     }
   }).catch(() => {});
 
   saveBtn.addEventListener('click', async () => {
     const payload = {
       notificationsEnabled: notificationsEl.checked,
-      currency: currencyEl.value
+      currency: currencyEl.value,
+      emailAlertEnabled: emailAlertEnabledEl.checked,
+      emailAlertTo: emailAlertToEl.value.trim(),
+      emailViaDesktopApp: emailViaDesktopAppEl.checked,
+      desktopAppUrl: desktopAppUrlEl.value.trim() || 'http://127.0.0.1:8765',
+      desktopAppSecret: desktopAppSecretEl.value.trim() || ''
     };
     const result = await browser.runtime.sendMessage({ type: 'SET_OPTIONS', payload });
     saveStatus.textContent = result && result.ok ? 'Saved.' : 'Failed to save.';

@@ -8,6 +8,7 @@ using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Scheduling;
 using ProductDealFinder.Core.Scraping;
 using ProductDealFinder.Infrastructure.Email;
+using ProductDealFinder.Infrastructure.Relay;
 using ProductDealFinder.Infrastructure.Scheduling;
 using ProductDealFinder.Infrastructure.Scraping;
 
@@ -74,6 +75,9 @@ public partial class App : Application
                 // Background scanning
                 services.AddHostedService<BackgroundScanHostedService>();
 
+                // Extension relay (Firefox extension → desktop app → email)
+                services.AddSingleton<IExtensionRelayService, ExtensionRelayService>();
+
                 // WPF
                 services.AddSingleton<MainWindow>();
                 services.AddTransient<ManageDataWindow>();
@@ -88,6 +92,9 @@ public partial class App : Application
         }
 
         _host.Start();
+
+        var relay = _host.Services.GetRequiredService<IExtensionRelayService>();
+        relay.StartAsync().GetAwaiter().GetResult();
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
@@ -107,6 +114,12 @@ public partial class App : Application
     {
         if (_host is not null)
         {
+            try
+            {
+                var relay = _host.Services.GetService<IExtensionRelayService>();
+                relay?.StopAsync().GetAwaiter().GetResult();
+            }
+            catch { }
             _host.StopAsync().GetAwaiter().GetResult();
             _host.Dispose();
         }

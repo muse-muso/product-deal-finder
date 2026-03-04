@@ -16,6 +16,17 @@ public sealed record ProductAddedContext(
     ProductTarget ProductTarget,
     PriceThreshold Threshold);
 
+/// <summary>
+/// Payload sent by the Firefox extension to the desktop app relay for automatic email.
+/// </summary>
+public sealed record ExtensionAlertPayload(
+    string ProductName,
+    string RetailerName,
+    string Url,
+    decimal Price,
+    decimal Threshold,
+    string Currency);
+
 public interface IEmailNotificationService
 {
     /// <summary>
@@ -27,5 +38,10 @@ public interface IEmailNotificationService
     /// Sends an email notification when a new product is added to the scan list.
     /// </summary>
     Task SendProductAddedNotificationAsync(ProductAddedContext context, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a price alert email from extension relay payload (Firefox extension → desktop app).
+    /// </summary>
+    Task SendExtensionPriceAlertAsync(ExtensionAlertPayload payload, CancellationToken cancellationToken = default);
 }
 

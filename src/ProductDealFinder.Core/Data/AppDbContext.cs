@@ -146,6 +146,9 @@ public class AppDbContext : DbContext
             entity.Property(s => s.DefaultCurrency)
                 .IsRequired()
                 .HasMaxLength(8);
+
+            entity.Property(s => s.ExtensionRelaySecret)
+                .HasMaxLength(128);
         });
     }
 }

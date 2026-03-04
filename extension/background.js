@@ -7,7 +7,15 @@ const STORAGE_KEY = 'productDealFinder_tracked';
 const STORAGE_OPTIONS = 'productDealFinder_options';
 const MAX_PRICE_HISTORY = 10;
 
-const DEFAULT_OPTIONS = { notificationsEnabled: true, currency: 'AUD' };
+const DEFAULT_OPTIONS = {
+  notificationsEnabled: true,
+  currency: 'AUD',
+  emailAlertEnabled: false,
+  emailAlertTo: '',
+  emailViaDesktopApp: false,
+  desktopAppUrl: 'http://127.0.0.1:8765',
+  desktopAppSecret: ''
+};
 
 const notificationIdToUrl = new Map();
 
@@ -256,6 +264,55 @@ async function handlePageData(payload) {
         message: `${entry.productName} is now ${opts.currency} ${price.toFixed(2)} (your target: ${opts.currency} ${entry.threshold})`
       });
     } catch (_) {}
+  }
+
+  // Free email option: open a draft email (mailto) so user can send themselves the alert. $0, no server.
+  if (atOrBelow && opts.emailAlertEnabled && opts.emailAlertTo && opts.emailAlertTo.trim()) {
+    try {
+      const to = opts.emailAlertTo.trim();
+      const subject = 'Price alert: ' + (entry.productName || 'Product').replace(/[\r\n]/g, ' ');
+      const body = [
+        entry.productName || 'Product',
+        'Retailer: ' + (entry.retailerName || ''),
+        'Current price: ' + opts.currency + ' ' + price.toFixed(2),
+        'Your target: ' + opts.currency + ' ' + entry.threshold,
+        'Link: ' + entry.url
+      ].join('\n');
+      const mailto = 'mailto:' + encodeURIComponent(to) +
+        '?subject=' + encodeURIComponent(subject) +
+        '&body=' + encodeURIComponent(body);
+      await browser.tabs.create({ url: mailto });
+    } catch (_) {}
+  }
+
+  // Automatic email via desktop app: POST to local relay; desktop app sends email via your SMTP. $0.
+  if (atOrBelow && opts.emailViaDesktopApp && opts.desktopAppUrl && opts.desktopAppUrl.trim()) {
+    try {
+      const base = opts.desktopAppUrl.trim().replace(/\/+$/, '');
+      const url = base + '/alert';
+      const payload = {
+        productName: entry.productName || 'Product',
+        retailerName: entry.retailerName || '',
+        url: entry.url,
+        price: price,
+        threshold: entry.threshold,
+        currency: opts.currency || 'AUD'
+      };
+      const headers = { 'Content-Type': 'application/json' };
+      if (opts.desktopAppSecret && opts.desktopAppSecret.trim()) {
+        headers['X-Extension-Secret'] = opts.desktopAppSecret.trim();
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        console.warn('[PDF] Desktop app relay returned', res.status);
+      }
+    } catch (e) {
+      console.warn('[PDF] Desktop app relay failed', e);
+    }
   }
 
   return { ok: true, tracked: true, atOrBelow, price, threshold: entry.threshold };

@@ -6,6 +6,7 @@ using ProductDealFinder.Core.Data;
 using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Models;
 using ProductDealFinder.Core.Scheduling;
+using ProductDealFinder.Infrastructure.Relay;
 
 namespace ProductDealFinder;
 
@@ -17,17 +18,20 @@ public partial class MainWindow : Window
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private readonly IEmailNotificationService _emailNotificationService;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IExtensionRelayService _extensionRelay;
 
     private const string SmtpCredentialKey = "ProductDealFinder_SMTP";
 
     public MainWindow(
         IDbContextFactory<AppDbContext> dbContextFactory,
         IEmailNotificationService emailNotificationService,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        IExtensionRelayService extensionRelay)
     {
         _dbContextFactory = dbContextFactory;
         _emailNotificationService = emailNotificationService;
         _scopeFactory = scopeFactory;
+        _extensionRelay = extensionRelay;
         InitializeComponent();
         Loaded += OnLoaded;
     }
@@ -59,6 +63,9 @@ public partial class MainWindow : Window
                 DefaultNotificationEmailTextBox.Text = settings.DefaultNotificationEmail ?? "";
                 SmtpUserNameTextBox.Text = settings.SmtpUserName;
                 ScanIntervalMinutesTextBox.Text = ((int)settings.ScanInterval.TotalMinutes).ToString();
+                ExtensionRelayEnabledCheckBox.IsChecked = settings.ExtensionRelayEnabled ?? false;
+                ExtensionRelayPortTextBox.Text = (settings.ExtensionRelayPort > 0 ? settings.ExtensionRelayPort.ToString() : null) ?? "8765";
+                ExtensionRelaySecretTextBox.Text = settings.ExtensionRelaySecret ?? "";
             }
 
             StatusTextBox.Text = "Loaded settings and retailers.";
@@ -158,7 +165,16 @@ public partial class MainWindow : Window
             settings.SmtpPasswordCredentialKey = SmtpCredentialKey;
             settings.ScanInterval = TimeSpan.FromMinutes(minutes);
 
+            settings.ExtensionRelayEnabled = ExtensionRelayEnabledCheckBox.IsChecked == true;
+            if (int.TryParse(ExtensionRelayPortTextBox.Text.Trim(), out int relayPort) && relayPort > 0 && relayPort < 65536)
+                settings.ExtensionRelayPort = relayPort;
+            else
+                settings.ExtensionRelayPort = 8765; // non-null for new/updated row
+            settings.ExtensionRelaySecret = string.IsNullOrWhiteSpace(ExtensionRelaySecretTextBox.Text) ? null : ExtensionRelaySecretTextBox.Text.Trim();
+
             await db.SaveChangesAsync();
+
+            try { await _extensionRelay.RestartAsync(); } catch (Exception ex) { StatusTextBox.Text = "Settings saved. Relay restart failed: " + ex.Message; return; }
 
             StatusTextBox.Text = "Email and scan settings saved successfully.";
         }
