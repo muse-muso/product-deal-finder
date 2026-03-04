@@ -10,8 +10,50 @@ h1 {
   font-size: 20px;
 }
 
+h2 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+.how-it-works p {
+  margin: 0;
+  color: #374151;
+  line-height: 1.5;
+}
+
 section {
   margin-bottom: 20px;
+}
+
+.import-export .button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.btn.secondary {
+  padding: 8px 14px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn.secondary:hover {
+  background: #e5e7eb;
+}
+
+.file-label {
+  cursor: pointer;
+  margin: 0;
+}
+
+.replace-label {
+  margin-left: 8px;
 }
 
 section label:not(.checkbox) {

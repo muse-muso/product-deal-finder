@@ -130,6 +130,27 @@ h2 {
   color: #6b7280;
 }
 
+.item-history {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.item-target-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.target-input {
+  width: 100px;
+  padding: 4px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
 .item-actions {
   margin-top: 4px;
 }

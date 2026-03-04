@@ -5,6 +5,7 @@
 
 const STORAGE_KEY = 'productDealFinder_tracked';
 const STORAGE_OPTIONS = 'productDealFinder_options';
+const MAX_PRICE_HISTORY = 10;
 
 const DEFAULT_OPTIONS = { notificationsEnabled: true, currency: 'AUD' };
 
@@ -15,20 +16,47 @@ function generateId() {
 }
 
 async function getTracked() {
+  try {
+    const o = await browser.storage.sync.get(STORAGE_KEY);
+    if (o[STORAGE_KEY] && Array.isArray(o[STORAGE_KEY])) return ensurePriceHistory(o[STORAGE_KEY]);
+  } catch (_) {}
   const o = await browser.storage.local.get(STORAGE_KEY);
-  return o[STORAGE_KEY] || [];
+  const items = o[STORAGE_KEY] || [];
+  if (items.length > 0) {
+    try {
+      await browser.storage.sync.set({ [STORAGE_KEY]: items });
+    } catch (_) {}
+  }
+  return ensurePriceHistory(items);
+}
+
+function ensurePriceHistory(items) {
+  return items.map(i => ({ ...i, priceHistory: i.priceHistory || [] }));
 }
 
 async function setTracked(items) {
-  await browser.storage.local.set({ [STORAGE_KEY]: items });
+  const normalized = ensurePriceHistory(items);
+  try {
+    await browser.storage.sync.set({ [STORAGE_KEY]: normalized });
+    return;
+  } catch (_) {}
+  await browser.storage.local.set({ [STORAGE_KEY]: normalized });
 }
 
 async function getOptions() {
+  try {
+    const o = await browser.storage.sync.get(STORAGE_OPTIONS);
+    if (o[STORAGE_OPTIONS]) return { ...DEFAULT_OPTIONS, ...o[STORAGE_OPTIONS] };
+  } catch (_) {}
   const o = await browser.storage.local.get(STORAGE_OPTIONS);
   return { ...DEFAULT_OPTIONS, ...o[STORAGE_OPTIONS] };
 }
 
 async function setOptions(opts) {
+  try {
+    await browser.storage.sync.set({ [STORAGE_OPTIONS]: opts });
+    return;
+  } catch (_) {}
   await browser.storage.local.set({ [STORAGE_OPTIONS]: opts });
 }
 
@@ -52,6 +80,41 @@ browser.runtime.onInstalled.addListener(() => {
 
 browser.runtime.onStartup.addListener(() => {
   refreshBadge();
+});
+
+browser.contextMenus.create({
+  id: 'track-this-product',
+  title: 'Track this product with Product Deal Finder',
+  contexts: ['page'],
+  documentUrlPatterns: [
+    'https://www.jbhifi.com.au/*',
+    'https://www.amazon.com.au/*',
+    'https://www.thegoodguys.com.au/*',
+    'https://www.officeworks.com.au/*',
+    'https://www.harveynorman.com.au/*'
+  ]
+});
+
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId !== 'track-this-product' || !tab || !tab.id) return;
+  try {
+    const payload = await browser.tabs.sendMessage(tab.id, { type: 'GET_PAGE_DATA' });
+    if (!payload || !payload.url) return;
+    const result = await addTracked({
+      url: payload.url,
+      threshold: 0,
+      currency: 'AUD',
+      productName: payload.productName,
+      retailerName: payload.retailerName
+    });
+    if (result && result.ok) {
+      await browser.notifications.create({
+        type: 'basic',
+        title: 'Product Deal Finder',
+        message: 'Product added. Open the extension and set your target price.'
+      });
+    }
+  } catch (_) {}
 });
 
 browser.notifications.onClicked.addListener(notificationId => {
@@ -84,6 +147,18 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     setOptions(message.payload).then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
     return true;
   }
+  if (message.type === 'UPDATE_TRACKED') {
+    updateTracked(message.id, message.payload).then(sendResponse).catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+  if (message.type === 'EXPORT_TRACKED') {
+    getTracked().then(items => sendResponse({ ok: true, items })).catch(() => sendResponse({ ok: false, items: [] }));
+    return true;
+  }
+  if (message.type === 'IMPORT_TRACKED') {
+    importTracked(message.items, message.replace).then(sendResponse).catch(() => sendResponse({ ok: false }));
+    return true;
+  }
   sendResponse({ ok: false });
   return false;
 });
@@ -100,12 +175,48 @@ async function addTracked({ url, threshold, currency, productName, retailerName 
     retailerName: retailerName || '',
     addedAt: Date.now(),
     lastPrice: null,
-    lastCheckedAt: null
+    lastCheckedAt: null,
+    priceHistory: []
   };
   items.push(entry);
   await setTracked(items);
   await refreshBadge();
   return { ok: true, id: entry.id };
+}
+
+async function updateTracked(id, payload) {
+  const items = await getTracked();
+  const entry = items.find(i => i.id === id);
+  if (!entry) return { ok: false };
+  if (payload.threshold !== undefined) entry.threshold = Number(payload.threshold);
+  if (payload.currency !== undefined) entry.currency = payload.currency;
+  await setTracked(items);
+  return { ok: true };
+}
+
+async function importTracked(importedItems, replace) {
+  let items = replace ? [] : await getTracked();
+  const seen = new Set(items.map(i => i.url));
+  for (const it of importedItems) {
+    const url = it.url || it.link;
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    items.push({
+      id: generateId(),
+      url,
+      threshold: Number(it.threshold) || 0,
+      currency: it.currency || 'AUD',
+      productName: it.productName || it.name || url,
+      retailerName: it.retailerName || '',
+      addedAt: Date.now(),
+      lastPrice: it.lastPrice != null ? Number(it.lastPrice) : null,
+      lastCheckedAt: it.lastCheckedAt || null,
+      priceHistory: Array.isArray(it.priceHistory) ? it.priceHistory.slice(0, MAX_PRICE_HISTORY) : []
+    });
+  }
+  await setTracked(items);
+  await refreshBadge();
+  return { ok: true, count: items.length };
 }
 
 async function removeTracked(id) {
@@ -129,6 +240,9 @@ async function handlePageData(payload) {
   entry.lastCheckedAt = Date.now();
   if (productName) entry.productName = productName;
   if (retailerName) entry.retailerName = retailerName;
+  if (!entry.priceHistory) entry.priceHistory = [];
+  entry.priceHistory.push({ price, at: Date.now() });
+  if (entry.priceHistory.length > MAX_PRICE_HISTORY) entry.priceHistory.shift();
   await setTracked(items);
 
   const atOrBelow = price <= entry.threshold;

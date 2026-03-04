@@ -10,6 +10,10 @@
     trackStatus.classList.toggle('error', !!isError);
   }
 
+  function formatPrice(currency, value) {
+    return value != null ? `${currency} ${Number(value).toFixed(2)}` : '—';
+  }
+
   async function loadTracked() {
     const items = await browser.runtime.sendMessage({ type: 'GET_TRACKED' });
     trackedList.innerHTML = '';
@@ -21,8 +25,30 @@
       name.textContent = item.productName || item.url;
       const meta = document.createElement('div');
       meta.className = 'item-meta';
-      const lastPrice = item.lastPrice != null ? `${item.currency} ${Number(item.lastPrice).toFixed(2)}` : '—';
-      meta.textContent = `${item.retailerName || 'Product'} · Last: ${lastPrice} · Target: ${item.currency} ${item.threshold}`;
+      const lastPrice = formatPrice(item.currency, item.lastPrice);
+      const targetLabel = item.threshold <= 0 ? 'Set target' : `${item.currency} ${item.threshold}`;
+      meta.textContent = `${item.retailerName || 'Product'} · Last: ${lastPrice} · Target: ${targetLabel}`;
+      const history = (item.priceHistory || []).slice(-5);
+      const row = document.createElement('div');
+      row.className = 'item-target-row';
+      const targetInput = document.createElement('input');
+      targetInput.type = 'number';
+      targetInput.min = '0';
+      targetInput.step = '0.01';
+      targetInput.placeholder = 'Target price';
+      targetInput.value = item.threshold > 0 ? item.threshold : '';
+      targetInput.className = 'target-input';
+      const setTargetBtn = document.createElement('button');
+      setTargetBtn.className = 'btn small';
+      setTargetBtn.textContent = item.threshold > 0 ? 'Update target' : 'Set target';
+      setTargetBtn.addEventListener('click', async () => {
+        const v = parseFloat(targetInput.value);
+        if (!Number.isFinite(v) || v <= 0) return;
+        await browser.runtime.sendMessage({ type: 'UPDATE_TRACKED', id: item.id, payload: { threshold: v } });
+        loadTracked();
+      });
+      row.appendChild(targetInput);
+      row.appendChild(setTargetBtn);
       const actions = document.createElement('div');
       actions.className = 'item-actions';
       const openBtn = document.createElement('button');
@@ -40,6 +66,13 @@
       actions.appendChild(removeBtn);
       li.appendChild(name);
       li.appendChild(meta);
+      if (history.length > 0) {
+        const historyEl = document.createElement('div');
+        historyEl.className = 'item-history';
+        historyEl.textContent = 'History: ' + history.map(h => formatPrice(item.currency, h.price)).join(' → ');
+        li.appendChild(historyEl);
+      }
+      li.appendChild(row);
       li.appendChild(actions);
       trackedList.appendChild(li);
     }

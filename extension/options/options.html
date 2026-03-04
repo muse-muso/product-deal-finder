@@ -9,6 +9,11 @@
   <div class="options">
     <h1>Product Deal Finder – Options</h1>
 
+    <section class="how-it-works">
+      <h2>How it works</h2>
+      <p>Track product pages on JB Hi-Fi, Officeworks, Amazon AU, The Good Guys, or Harvey Norman. When you <strong>visit</strong> a tracked page, the extension reads the current price and notifies you if it’s at or below your target. Your list syncs across Firefox installs where you’re signed in. No data is sent to any server.</p>
+    </section>
+
     <section>
       <label class="checkbox">
         <input type="checkbox" id="notificationsEnabled" checked>
@@ -27,6 +32,23 @@
 
     <button id="saveBtn" class="btn primary">Save</button>
     <p id="saveStatus" class="status"></p>
+
+    <section class="import-export">
+      <h2>Import / Export</h2>
+      <p>Export your tracked list as JSON (backup or move to another browser). Import to add or replace tracked products.</p>
+      <div class="button-row">
+        <button id="exportBtn" class="btn secondary">Export tracked list</button>
+        <label class="btn secondary file-label">
+          Import
+          <input type="file" id="importFile" accept=".json" hidden>
+        </label>
+        <label class="checkbox replace-label">
+          <input type="checkbox" id="importReplace">
+          Replace existing (uncheck to merge)
+        </label>
+      </div>
+      <p id="importExportStatus" class="status"></p>
+    </section>
   </div>
   <script src="options.js"></script>
 </body>

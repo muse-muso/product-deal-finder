@@ -12,11 +12,13 @@ Browser extension that tracks product prices on Australian retailers and notifie
 
 ## How it works
 
-1. **Track a product:** Open a product page on one of the supported sites, click the extension icon, enter your target price (AUD), and click **Track this page**.
+1. **Track a product:** Open a product page on one of the supported sites, then either:
+   - Click the extension icon → enter your target price (AUD) → **Track this page**, or
+   - Right‑click the page → **Track this product with Product Deal Finder** (then open the extension and set your target price).
 2. **Price is checked when you visit:** Each time you load a product page that you’re tracking, the extension reads the price from the page and compares it to your target.
 3. **Notification:** If the current price is at or below your target, you get a browser notification. Click it to open the product page.
 
-Data is stored locally in the browser (no server). You can turn notifications on or off in the extension options.
+**Features:** Tracked list and options sync across Firefox installs (where you’re signed in). Popup shows last 5 prices per product (history). You can edit the target price per product, and import/export your list (Options). Data is stored in the browser only; no server.
 
 ## Load in Firefox (development)
 

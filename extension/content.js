@@ -8,7 +8,7 @@
     'www.jbhifi.com.au': {
       code: 'JB_HIFI',
       name: 'JB Hi-Fi',
-      selectors: '[class*="PriceTag_actualPrice"]'
+      selectors: '[class*="PriceTag_actualPrice"], [data-testid="ticket-price"]'
     },
     'www.officeworks.com.au': {
       code: 'OFFICEWORKS',

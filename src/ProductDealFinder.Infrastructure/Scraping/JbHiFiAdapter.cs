@@ -11,8 +11,8 @@ public sealed class JbHiFiAdapter : BaseProductPageAdapter
 
     protected override string? GetDefaultPriceSelector(ProductTarget target)
     {
-        // JB Hi-Fi product page: main price has PriceTag_actualPrice in class.
-        return "[class*=\"PriceTag_actualPrice\"]";
+        // JB Hi-Fi product page: main price has PriceTag_actualPrice in class or data-testid="ticket-price".
+        return "[class*=\"PriceTag_actualPrice\"], [data-testid=\"ticket-price\"]";
     }
 }
 
