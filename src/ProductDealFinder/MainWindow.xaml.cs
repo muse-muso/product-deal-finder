@@ -1,9 +1,11 @@
 using System.Windows;
 using CredentialManagement;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using ProductDealFinder.Core.Data;
 using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Models;
+using ProductDealFinder.Core.Scheduling;
 
 namespace ProductDealFinder;
 
@@ -14,15 +16,18 @@ public partial class MainWindow : Window
 {
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private readonly IEmailNotificationService _emailNotificationService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     private const string SmtpCredentialKey = "ProductDealFinder_SMTP";
 
     public MainWindow(
         IDbContextFactory<AppDbContext> dbContextFactory,
-        IEmailNotificationService emailNotificationService)
+        IEmailNotificationService emailNotificationService,
+        IServiceScopeFactory scopeFactory)
     {
         _dbContextFactory = dbContextFactory;
         _emailNotificationService = emailNotificationService;
+        _scopeFactory = scopeFactory;
         InitializeComponent();
         Loaded += OnLoaded;
     }
@@ -93,22 +98,35 @@ public partial class MainWindow : Window
                 return;
             }
 
-            if (string.IsNullOrEmpty(password))
+            // Save password to Windows Credential Manager when provided; leave blank to keep existing.
+            bool haveExistingCredential = false;
+            using (var existing = new Credential { Target = SmtpCredentialKey, Type = CredentialType.Generic })
             {
-                StatusTextBox.Text = "Please enter an SMTP password.";
-                return;
+                haveExistingCredential = existing.Load();
             }
 
-            using (var cred = new Credential
+            if (string.IsNullOrEmpty(password))
             {
-                Target = SmtpCredentialKey,
-                Username = smtpUser,
-                Password = password,
-                PersistanceType = PersistanceType.LocalComputer,
-                Type = CredentialType.Generic
-            })
+                if (!haveExistingCredential)
+                {
+                    StatusTextBox.Text = "Please enter an SMTP password (leave blank only if you already saved one).";
+                    return;
+                }
+                // Keep existing credential; only update other settings below.
+            }
+            else
             {
-                cred.Save();
+                using (var cred = new Credential
+                {
+                    Target = SmtpCredentialKey,
+                    Username = smtpUser,
+                    Password = password,
+                    PersistanceType = PersistanceType.LocalComputer,
+                    Type = CredentialType.Generic
+                })
+                {
+                    cred.Save();
+                }
             }
 
             await using var db = await _dbContextFactory.CreateDbContextAsync();
@@ -235,6 +253,27 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusTextBox.Text = $"Error saving product/target: {ex.Message}";
+        }
+    }
+
+    private async void OnRunScanNowClick(object sender, RoutedEventArgs e)
+    {
+        RunScanNowButton.IsEnabled = false;
+        StatusTextBox.Text = "Manual scan started…";
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var scanService = scope.ServiceProvider.GetRequiredService<IScanService>();
+            await scanService.RunScanOnceAsync();
+            StatusTextBox.Text = "Manual scan completed. Check Management Window for latest prices and history.";
+        }
+        catch (Exception ex)
+        {
+            StatusTextBox.Text = $"Manual scan failed: {ex.Message}";
+        }
+        finally
+        {
+            RunScanNowButton.IsEnabled = true;
         }
     }
 

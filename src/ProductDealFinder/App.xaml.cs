@@ -2,6 +2,7 @@ using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ProductDealFinder.Core.Data;
 using ProductDealFinder.Core.Email;
 using ProductDealFinder.Core.Scheduling;
@@ -40,6 +41,7 @@ public partial class App : Application
         try
         {
             _host = Host.CreateDefaultBuilder(e.Args)
+            .ConfigureLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information))
             .ConfigureServices((_, services) =>
             {
                 string dataDirectory = System.IO.Path.Combine(

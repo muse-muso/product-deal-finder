@@ -1,9 +1,12 @@
+using Microsoft.Extensions.Logging;
 using ProductDealFinder.Core.Models;
 
 namespace ProductDealFinder.Infrastructure.Scraping;
 
 public sealed class AmazonAuAdapter : BaseProductPageAdapter
 {
+    public AmazonAuAdapter(ILogger<AmazonAuAdapter> logger) : base(logger) { }
+
     public override string RetailerCode => RetailerCodes.AmazonAu;
 
     protected override string? GetDefaultPriceSelector(ProductTarget target)

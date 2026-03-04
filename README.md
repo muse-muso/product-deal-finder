@@ -257,6 +257,31 @@ Troubleshooting
     - For Gmail, confirm you are using an **app password** (not your normal password).
   - Check the **Status / Last Action** box for errors while saving settings or adding products.
 
+- **Wrong price in email / alert (e.g. 13 AUD instead of real price)**
+  - The scraper uses the **first** number that looks like a price on the page; e.g. “13” can come from “13-inch” in the product name. Use these steps to find and fix it:
+
+  1. **Run the app from the command line** so scrape logs appear in the console:
+     ```powershell
+     cd "C:\Users\<YOUR_USER>\Documents\github\product-deal-finder\src"
+     & "C:\Program Files\dotnet\dotnet.exe" run --project "ProductDealFinder\ProductDealFinder.csproj"
+     ```
+
+  2. **Trigger a scan** so logs are written: in the app, click **“Run scan now (manual / test)”** and wait for “Manual scan completed.”
+
+  3. **In the console**, find the log lines for your product (search for the product URL or `TargetId=`). You will see:
+     - **Selector** – the CSS selector used (or “(body fallback)”).
+     - **Scraped text snippet** – the first ~2500 characters of the text the scraper used.
+     - **RawMatch** and **ParsedPrice** – the substring that was treated as the price and the number sent to the email.
+
+  4. **In the snippet**, search for the **ParsedPrice** value (e.g. `13`). See where it appears (e.g. inside “13-inch”). That confirms why the wrong number was chosen.
+
+  5. **Open the product page in your browser** (e.g. Chrome): paste the product URL from the app into the address bar.
+
+  6. **Find the main price element**: right‑click the **correct price** on the page → **Inspect**. In DevTools, the price element will be highlighted. Note its tag and any `class` or `id` (e.g. `span.price`, `.product-price`, `[data-testid="product-price"]`). Build a short CSS selector that matches only that element (e.g. `.price--value` or `span[data-automation="product-price"]`).
+
+  7. **In the app**, set the override and rescan:
+     - The **“Optional CSS Price Selector Override”** field is on the main window when **adding** a product. To fix an existing product: on the main window, enter the same product details (name, retailer, URL, threshold) and paste your selector into **“Optional CSS Price Selector Override”**, then click **Save Product &amp; Threshold**. Open **Management Window** → **Products &amp; Thresholds**, delete the old (wrong-price) target for that product if you now have two, then run **“Run scan now”** again. Check the console **ParsedPrice** or the next email to confirm the price is correct.
+
 - **No price parsed / no alerts**
   - The built‑in selectors are best‑effort and may need adjustment as sites change.
   - Try:

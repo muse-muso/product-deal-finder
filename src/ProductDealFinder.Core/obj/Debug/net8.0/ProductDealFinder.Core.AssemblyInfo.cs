@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProductDealFinder.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fa529b63587c0d912687068d655c880156ba3d36")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c5a526e47b12313d7c9e68c5bf28203e81859628")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProductDealFinder.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProductDealFinder.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

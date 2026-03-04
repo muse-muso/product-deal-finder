@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using ProductDealFinder.Core.Models;
 using ProductDealFinder.Core.Scraping;
@@ -8,6 +9,15 @@ namespace ProductDealFinder.Infrastructure.Scraping;
 
 public abstract class BaseProductPageAdapter : IProductPageAdapter
 {
+    private const int ScrapedTextLogLimit = 2500;
+
+    protected readonly ILogger _logger;
+
+    protected BaseProductPageAdapter(ILogger logger)
+    {
+        _logger = logger;
+    }
+
     public abstract string RetailerCode { get; }
 
     public async Task<ScrapePriceResult> ScrapeAsync(IPage page, ProductTarget target, CancellationToken cancellationToken)
@@ -34,13 +44,29 @@ public abstract class BaseProductPageAdapter : IProductPageAdapter
 
         if (string.IsNullOrWhiteSpace(text))
         {
+            _logger.LogDebug("Scrape TargetId={TargetId}: no text from selector, using body", target.Id);
             text = await page.InnerTextAsync("body", new PageInnerTextOptions
             {
                 Timeout = 10_000
             });
         }
 
+        string selectorUsed = !string.IsNullOrWhiteSpace(selector) ? selector : "(body fallback)";
+        int textLen = text?.Length ?? 0;
+        string snippet = string.IsNullOrEmpty(text)
+            ? "(empty)"
+            : text.Length <= ScrapedTextLogLimit
+                ? text
+                : text.Substring(0, ScrapedTextLogLimit) + "... [truncated]";
+        _logger.LogInformation(
+            "Scrape TargetId={TargetId} Retailer={Retailer} Url={Url} Selector={Selector} TextLength={TextLength}. Scraped text snippet: {Snippet}",
+            target.Id, RetailerCode, target.ProductPageUrl, selectorUsed, textLen, snippet);
+
         (decimal? price, string? raw) = TryExtractPrice(text);
+
+        _logger.LogInformation(
+            "Scrape TargetId={TargetId} price extraction: RawMatch={RawMatch} ParsedPrice={ParsedPrice}",
+            target.Id, raw ?? "(none)", price?.ToString(CultureInfo.InvariantCulture) ?? "(null)");
 
         var currency = target.Thresholds.FirstOrDefault()?.Currency
                        ?? "AUD";

@@ -1,9 +1,12 @@
+using Microsoft.Extensions.Logging;
 using ProductDealFinder.Core.Models;
 
 namespace ProductDealFinder.Infrastructure.Scraping;
 
 public sealed class GenericCssSelectorAdapter : BaseProductPageAdapter
 {
+    public GenericCssSelectorAdapter(ILogger<GenericCssSelectorAdapter> logger) : base(logger) { }
+
     public override string RetailerCode => RetailerCodes.Generic;
 
     protected override string? GetDefaultPriceSelector(ProductTarget target)

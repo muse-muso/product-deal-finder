@@ -38,7 +38,7 @@
                 <TextBlock Text="SMTP Username" />
                 <TextBox x:Name="SmtpUserNameTextBox" Margin="0,2,0,8" />
 
-                <TextBlock Text="SMTP Password (stored securely in Windows Credential Manager)" />
+                <TextBlock Text="SMTP Password (saved in Windows Credential Manager; leave blank to keep existing)" />
                 <PasswordBox x:Name="SmtpPasswordBox" Margin="0,2,0,8" />
 
                 <TextBlock Text="Scan Interval (minutes)" />
@@ -80,6 +80,13 @@
                         Click="OnSaveProductTargetClick" />
 
                 <Separator Margin="0,10,0,10" />
+
+                <Button x:Name="RunScanNowButton"
+                        Content="Run scan now (manual / test)"
+                        Width="200"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,0,8"
+                        Click="OnRunScanNowClick" />
 
                 <TextBlock Text="Status / Last Action" FontWeight="Bold" />
                 <TextBox x:Name="StatusTextBox"
